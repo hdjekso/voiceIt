@@ -3,6 +3,7 @@ const { createTranscriptService } = require('../services/createTranscriptService
 const mongoose = require('mongoose');
 const path = require('path');
 const { spawn } = require('child_process');
+const fs = require('fs');
 
 // get all transcripts (title and snippet only)
 const getTranscripts = async (req, res) => {
@@ -205,6 +206,16 @@ const uploadAudioFile = (req, res) => {
       //res.write(JSON.stringify({ type: 'end', message: 'Transcription completed' }) + '\n');
       res.write(JSON.stringify({ type: 'summary', data: summary }) + '\n');
       res.end();
+
+        // Delete up the uploaded file
+        try {
+          if (fs.existsSync(audioFilePath)) {
+            fs.unlinkSync(audioFilePath); // Delete the uploaded file
+            console.log(`File ${audioFilePath} deleted successfully.`);
+          }
+        } catch (err) {
+          console.error(`Failed to delete file ${audioFilePath}:`, err);
+        }
 
       if (code === 0) {
         try {
