@@ -184,7 +184,7 @@ const uploadAudioFile = (req, res) => {
       }
       chunk = chunk.slice(0, -1); //remove last char of chunk (whitespace)      
 
-      if (chunk.startsWith('  SUMMARY:')) {
+      if (chunk.startsWith('SUMMARY:')) {
         console.log("summary detected")
         // Capture the summary
         summary = chunk.replace('SUMMARY:', '').trim();

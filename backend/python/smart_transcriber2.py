@@ -146,8 +146,16 @@ class ChunkedAudioProcessor:
                 "error": f"Transcription failed: {str(e)}",
                 "traceback": traceback.format_exc()
             }), file=sys.stderr)
+        
+        finally:
+            # Cleanup temporary MP3 file if it exists
+            if mp3_filename and os.path.exists(mp3_filename):
+                try:
+                    os.remove(mp3_filename)
+                    #print(f"Temporary file {mp3_filename} removed successfully.")
+                except Exception as e:
+                    print(f"Failed to delete temporary file {mp3_filename}: {str(e)}")
 
-    #FIXME: remove space before fullstop
     '''def summarize_text(self, transcript):
         try:
             split_tokens = transcript.split(" ")
