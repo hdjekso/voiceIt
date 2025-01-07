@@ -75,11 +75,12 @@ async function startServer() {
   await downloadFile(); //wait for checkpoint file to finish downloading
 
   // connect to db
+  const port = process.env.PORT || 4000;
   mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('connected to database')
     // listen to port
-    app.listen(process.env.PORT, () => {
+    app.listen(port, () => {
       console.log('listening for requests on port', process.env.PORT)
     })
   })
