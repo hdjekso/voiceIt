@@ -136,6 +136,21 @@ const NewTranscript = () => {
         </Container>
       );
     }
+    if (loading && activeTab === 'transcript'){
+      return (
+        <>
+          <Typography sx={{ whiteSpace: 'pre-wrap', fontSize: '1.75rem' }}>
+            {transcript}
+          </Typography>
+          <Container sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 4, pb: 6 }}>
+            <CircularProgress sx={{ mt: 2 }}/>
+            <Typography sx={{ color: 'gray', fontSize: '1.75rem', mt: 1 }}>
+              Transcribing...
+            </Typography>
+          </Container>
+        </>
+      );
+    }
 
     if (activeTab === 'transcript') {
       return (
