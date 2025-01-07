@@ -32,12 +32,11 @@ WORKDIR /app
 COPY node/package*.json ./node/
 RUN cd node && npm install
 
-# Copy Python project files and install dependencies
-COPY python/requirements.txt /app/python/
-RUN python3.10 -m pip install --no-cache-dir -r python/requirements.txt
-
 #Copy all files
 COPY . .
+
+# Copy Python project files and install dependencies
+RUN python3.10 -m pip install --no-cache-dir -r python/requirements.txt
 
 # Expose port for the application
 EXPOSE 4000
