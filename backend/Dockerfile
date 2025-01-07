@@ -36,6 +36,8 @@ WORKDIR /app
 #Copy all files
 COPY . .
 
+RUN ls -al /app/python
+
 # Copy Python project files and install dependencies
 RUN python3.10 -m pip install --no-cache-dir -r python/requirements.txt
 RUN cd node && npm install
