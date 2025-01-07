@@ -37,12 +37,12 @@ WORKDIR /app
 COPY . .
 
 RUN ls -al /app
-RUN ls -al /app/python
-RUN ls -al /app/node
+RUN ls -al /app/backend/python
+RUN ls -al /app/backend/node
 
 # Copy Python project files and install dependencies
-RUN python3.10 -m pip install --no-cache-dir -r python/requirements.txt
-RUN cd node && npm install
+RUN python3.10 -m pip install --no-cache-dir -r backend/python/requirements.txt
+RUN cd backend/node && npm install
 
 # Expose port for the application
 EXPOSE 4000
@@ -51,5 +51,5 @@ EXPOSE 4000
 ENV NODE_ENV=production
 
 # Set the working directory to the Node.js app directory and run the application
-WORKDIR /app/node
+WORKDIR /app/backend/node
 CMD ["npm", "start"]
