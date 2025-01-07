@@ -48,6 +48,15 @@ const Home = () => {
   });
   let navigate = useNavigate();
 
+  const loginWithRefresh = () => {
+    loginWithRedirect({
+      authorizationParams: {
+        prompt: "login",
+        scope: "openid profile email offline_access"
+      }
+    });
+  };
+
   useEffect(() => {
     const savedName = localStorage.getItem('updatedName');
     if (savedName) {
@@ -91,11 +100,21 @@ const Home = () => {
         setTranscripts(json);
       } catch (error) {
         console.error('Failed to fetch transcripts:', error);
-        setSnackbar({
-          open: true,
-          message: 'Failed to load transcripts',
-          severity: 'error'
-        });
+        // Check specifically for refresh token errors
+        if (error.message.includes('Missing Refresh Token')) {
+          setSnackbar({
+            open: true,
+            message: 'Session expired. Please log in again.',
+            severity: 'warning'
+          });
+          loginWithRefresh(); // Call the function here
+        } else {
+          setSnackbar({
+            open: true,
+            message: 'Failed to load transcripts',
+            severity: 'error'
+          });
+        }
       } finally {
         setIsLoadingTranscripts(false);
       }

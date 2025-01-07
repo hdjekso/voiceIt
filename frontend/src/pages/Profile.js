@@ -367,7 +367,7 @@ const Profile = () => {
           </CardContent>
         </Card>
       </Box>
-      {process.env.NODE_ENV === 'development' && (
+      {/*process.env.NODE_ENV === 'development' && (
         <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
           <Typography variant="caption" component="pre" sx={{ whiteSpace: 'pre-wrap', fontSize: '1.2rem' }}>
             {JSON.stringify(user, null, 2)}
@@ -378,7 +378,7 @@ const Profile = () => {
             </Typography>
           )}
         </Box>
-      )}
+      )*/}
 
       <Snackbar
         open={snackbar.open}
