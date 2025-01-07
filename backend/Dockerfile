@@ -1,5 +1,5 @@
 # Use the official Node.js 16 image as the base image
-FROM node:16
+FROM node:18
 
 # Install required dependencies for building Python from source
 RUN apt-get update && apt-get install -y \
