@@ -28,15 +28,12 @@ RUN curl -o /tmp/Python-3.10.0.tgz https://www.python.org/ftp/python/3.10.0/Pyth
 # Set the working directory
 WORKDIR /app
 
-# Copy Node.js project files and install dependencies
-COPY node/package*.json ./node/
-RUN cd node && npm install
-
 #Copy all files
 COPY . .
 
 # Copy Python project files and install dependencies
 RUN python3.10 -m pip install --no-cache-dir -r python/requirements.txt
+RUN cd node && npm install
 
 # Expose port for the application
 EXPOSE 4000
