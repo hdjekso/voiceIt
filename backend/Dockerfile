@@ -32,8 +32,8 @@ WORKDIR /app
 COPY . .
 
 # Copy Python project files and install dependencies
-RUN python3.10 -m pip install --no-cache-dir -r python/requirements.txt
-RUN cd node && npm install
+RUN ls -al /app/python && RUN python3.10 -m pip install --no-cache-dir -r python/requirements.txt
+RUN ls -al /app/node && RUN cd node && npm install
 
 # Expose port for the application
 EXPOSE 4000
