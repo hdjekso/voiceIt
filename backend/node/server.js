@@ -56,7 +56,7 @@ app.use(express.json());
 
 // Allow requests from React app
 app.use(cors({
-  origin: process.env.APP_URL, // Allow React app
+  origin: '*', // Allow React app
   methods: 'GET,POST,PATCH,DELETE',
   allowedHeaders: 'Content-Type,Authorization'
 }));
