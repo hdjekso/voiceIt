@@ -25,6 +25,11 @@ RUN curl -o /tmp/Python-3.10.0.tgz https://www.python.org/ftp/python/3.10.0/Pyth
     make -j 4 && \
     make altinstall
 
+# Ensure pip is installed for Python 3.10
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python3.10 get-pip.py && \
+    rm get-pip.py
+
 # Set the working directory
 WORKDIR /app
 
