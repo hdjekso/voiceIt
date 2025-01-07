@@ -1,22 +1,40 @@
-# Stage 1: Build Python environment
-FROM python:3.10-slim AS builder
-
-# Install dependencies
-RUN apt-get update && apt-get install -y build-essential
-
-# Install your Python packages
-COPY python/requirements.txt .
-RUN python3 -m pip install --no-cache-dir -r requirements.txt
-
-# Stage 2: Build Node.js environment
+# Use the official Node.js 16 image as the base image
 FROM node:16
 
-# Install dependencies for Python
-COPY --from=builder /usr/local /usr/local
+# Install required dependencies for building Python from source
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    zlib1g-dev \
+    libncurses5-dev \
+    libgdbm-dev \
+    libnss3-dev \
+    libssl-dev \
+    libreadline-dev \
+    libffi-dev \
+    curl \
+    libbz2-dev \
+    liblzma-dev \
+    tk-dev \
+    sudo
+
+# Download Python 3.10 and install it
+RUN curl -o /tmp/Python-3.10.0.tgz https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz && \
+    tar -xvzf /tmp/Python-3.10.0.tgz -C /tmp && \
+    cd /tmp/Python-3.10.0 && \
+    ./configure --enable-optimizations && \
+    make -j 4 && \
+    make altinstall
+
+# Set the working directory
+WORKDIR /app
 
 # Copy Node.js project files and install dependencies
 COPY node/package*.json ./node/
 RUN cd node && npm install
+
+# Copy Python project files and install dependencies
+COPY python/requirements.txt ./python/
+RUN python3.10 -m pip install --no-cache-dir -r python/requirements.txt
 
 #Copy all files
 COPY . .
