@@ -36,6 +36,10 @@ WORKDIR /app
 #Copy all files
 COPY . .
 
+# Download the checkpoint file from S3 during build process
+RUN mkdir -p /app/python/recasepunc && \
+    curl -o /app/python/recasepunc/checkpoint https://recasepunc-checkpoint-bucket.s3.us-west-2.amazonaws.com/checkpoint
+
 RUN ls -al /app
 RUN ls -al /app/backend/python
 RUN ls -al /app/backend/node

@@ -72,7 +72,7 @@ app.use((req, res, next) => {
 })
 
 async function startServer() {
-  await downloadFile(); //wait for checkpoint file to finish downloading
+  //await downloadFile(); //wait for checkpoint file to finish downloading
 
   // connect to db
   const port = process.env.PORT || 4000;
