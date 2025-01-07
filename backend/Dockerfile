@@ -33,7 +33,7 @@ COPY node/package*.json ./node/
 RUN cd node && npm install
 
 # Copy Python project files and install dependencies
-COPY python/requirements.txt ./python/
+COPY ./python/requirements.txt /app/python/
 RUN python3.10 -m pip install --no-cache-dir -r python/requirements.txt
 
 #Copy all files
