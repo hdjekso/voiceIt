@@ -61,3 +61,5 @@ debug/
 # Exclude large checkpoint file and extraneous python test files
 backend/python/recasepunc/checkpoint
 backend/python/misc
+
+/.history
