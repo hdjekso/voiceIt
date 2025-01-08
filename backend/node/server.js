@@ -72,6 +72,7 @@ app.use((req, res, next) => {
 })
 
 async function startServer() {
+  console.log(process.env.MONGO_URI)
   await downloadFile(); //wait for checkpoint file to finish downloading
 
   // connect to db
