@@ -77,7 +77,11 @@ export const Navigation = () => {
               localStorage.removeItem('updatedName');
               
               // Log out the user
-              logout({ returnTo: window.location.origin });
+              const returnToUrl = process.env.NODE_ENV === 'production'
+                ? 'https://voice-it-nine.vercel.app'
+                : 'http://localhost:3000';
+
+              logout({ returnTo: returnToUrl });
             }}
             sx={{ 
               height: 36,
