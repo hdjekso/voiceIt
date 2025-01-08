@@ -33,7 +33,12 @@ class ChunkedAudioProcessor:
         try:
             print("Starting model load...", file=sys.stderr)
             print("Loading Vosk model...", file=sys.stderr)
-            self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
+            try:
+                self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
+            except Exception as vosk_error:
+                print(f"Vosk model failed to load: {str(vosk_error)}", file=sys.stderr)
+                print(f"Vosk error traceback: {traceback.format_exc()}", file=sys.stderr)
+                raise
             print("Vosk model loaded, loading summarizer...", file=sys.stderr)
             self.summarizer = pipeline("summarization")
             self.is_initialized = True
