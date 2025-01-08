@@ -44,8 +44,16 @@ RUN ls -al /app
 RUN ls -al /app/backend/python
 RUN ls -al /app/backend/node
 
-# Copy Python project files and install dependencies
-RUN python3.10 -m pip install --no-cache-dir -r backend/python/requirements.txt
+# Create the Python virtual environment
+RUN python3 -m venv backend/python/venv
+
+# Install Python dependencies
+RUN /backend/python/venv/bin/pip install --no-cache-dir -r backend/python/requirements.txt
+
+RUN ls -al /app/backend/python/venv
+RUN ls -al /app/backend/python/venv/Scripts
+
+#Install node dependencies
 RUN cd backend/node && npm install
 
 # Expose port for the application
