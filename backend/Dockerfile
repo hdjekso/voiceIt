@@ -56,8 +56,8 @@ RUN apt-get update && apt-get install -y ffmpeg
 # Install vosk model
 RUN python3.10 -m venv backend/python/venv && \
     . backend/python/venv/bin/activate && \
-    pip install --no-cache-dir -r backend/python/requirements.txt && \
-    python -m vosk.model_downloader vosk-model-en-us-0.22
+    pip install --no-cache-dir -r backend/python/requirements.txt
+    #python -m vosk.model_downloader vosk-model-en-us-0.22
 
 # Make sure Python script is executable
 RUN chmod +x /app/backend/python/smart_transcriber2.py
