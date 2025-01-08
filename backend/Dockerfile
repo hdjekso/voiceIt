@@ -51,7 +51,7 @@ RUN python3.10 -m venv backend/python/venv
 RUN backend/python/venv/bin/pip install --no-cache-dir -r backend/python/requirements.txt
 
 RUN ls -al /app/backend/python/venv
-RUN ls -al /app/backend/python/venv/Scripts
+RUN ls -al /app/backend/python/venv/bin
 
 #Install node dependencies
 RUN cd backend/node && npm install
