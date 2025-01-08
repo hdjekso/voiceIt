@@ -33,8 +33,22 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
 # Set the working directory
 WORKDIR /app
 
+# Set environment variables
+ENV MODEL_DIR=/app/backend/python/models
+ENV VOSK_MODEL_NAME=vosk-model-en-us-0.22
+
+# Download and prepare the Vosk model
+RUN mkdir -p $MODEL_DIR \
+    && apt-get update && apt-get install -y wget unzip \
+    && wget -O $MODEL_DIR/$VOSK_MODEL_NAME.zip https://alphacephei.com/vosk/models/$VOSK_MODEL_NAME.zip \
+    && unzip $MODEL_DIR/$VOSK_MODEL_NAME.zip -d $MODEL_DIR \
+    && rm $MODEL_DIR/$VOSK_MODEL_NAME.zip
+
 #Copy all files
 COPY . .
+
+# Set model path in your Python code
+ENV VOSK_MODEL_PATH=$MODEL_DIR/$VOSK_MODEL_NAME
 
 # Download the checkpoint file from S3 during build process
 RUN mkdir -p /app/python/recasepunc && \

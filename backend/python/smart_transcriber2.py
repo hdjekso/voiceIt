@@ -30,11 +30,13 @@ class ChunkedAudioProcessor:
         self.recasepunc_checkpoint = os.path.abspath(os.path.join(self.current_dir, 'recasepunc', 'checkpoint'))
 
     def load_models(self):
+        VOSK_MODEL_PATH = os.getenv("VOSK_MODEL_PATH", "vosk-model-en-us-0.22")
         try:
             print("Starting model load...", file=sys.stderr)
             print("Loading Vosk model...", file=sys.stderr)
             try:
-                self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
+                #self.vosk_model = Model(model_name="vosk-model-en-us-0.22") #use small model if too large
+                self.vosk_model = Model(model_path=VOSK_MODEL_PATH)
             except Exception as vosk_error:
                 print(f"Vosk model failed to load: {str(vosk_error)}", file=sys.stderr)
                 print(f"Vosk error traceback: {traceback.format_exc()}", file=sys.stderr)
