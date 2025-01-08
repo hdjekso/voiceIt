@@ -65,6 +65,9 @@ RUN chmod +x /app/backend/python/smart_transcriber2.py
 # Set correct permissions for venv
 RUN chmod -R 755 /app/backend/python/venv
 
+# Ensure uploaded files directory has proper permissions
+RUN mkdir -p /app/backend/node/uploads && chmod 777 /app/backend/node/uploads
+
 RUN ls -al /app/backend/python/venv
 RUN ls -al /app/backend/python/venv/bin
 

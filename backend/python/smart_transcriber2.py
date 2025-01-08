@@ -239,6 +239,9 @@ class ChunkedAudioProcessor:
 
     def process_audio_file(self, audio_file_path):
         try:
+            print(f"Processing file: {audio_file_path}", file=sys.stderr)
+            print(f"File exists: {os.path.exists(audio_file_path)}", file=sys.stderr)
+            print(f"File permissions: {oct(os.stat(audio_file_path).st_mode)}", file=sys.stderr)
             self.transcribe_audio_in_chunks(audio_file_path)
         except Exception as e:
             print(json.dumps({
