@@ -30,9 +30,6 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3.10 get-pip.py && \
     rm get-pip.py
 
-#install venv package
-RUN sudo apt install python3.10-venv
-
 # Set the working directory
 WORKDIR /app
 
@@ -48,10 +45,10 @@ RUN ls -al /app/backend/python
 RUN ls -al /app/backend/node
 
 # Create the Python virtual environment
-RUN python3 -m venv backend/python/venv
+RUN python3.10 -m venv backend/python/venv
 
 # Install Python dependencies
-RUN /backend/python/venv/bin/pip install --no-cache-dir -r backend/python/requirements.txt
+RUN backend/python/venv/bin/pip install --no-cache-dir -r backend/python/requirements.txt
 
 RUN ls -al /app/backend/python/venv
 RUN ls -al /app/backend/python/venv/Scripts
