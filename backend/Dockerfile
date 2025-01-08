@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     liblzma-dev \
     tk-dev \
     sudo
+    python3.10-venv
 
 # Download Python 3.10 and install it
 RUN curl -o /tmp/Python-3.10.0.tgz https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz && \
