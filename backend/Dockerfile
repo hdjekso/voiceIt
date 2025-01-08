@@ -4,6 +4,8 @@ FROM node:18
 # Use an appropriate Python base image
 FROM python:3.10-slim
 
+RUN apt-get update && apt-get install -y curl
+
 # Ensure pip is installed for Python 3.10
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3.10 get-pip.py && \

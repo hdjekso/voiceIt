@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
     sudo 
 
 # Download Python 3.10 and install it
-RUN curl -o /tmp/Python-3.10.0.tgz https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz && \
+backend/DockerfileRUN curl -o /tmp/Python-3.10.0.tgz https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz && \
     tar -xvzf /tmp/Python-3.10.0.tgz -C /tmp && \
     cd /tmp/Python-3.10.0 && \
     ./configure --enable-optimizations && \
