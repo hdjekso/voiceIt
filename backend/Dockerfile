@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     libbz2-dev \
     liblzma-dev \
     tk-dev \
-    sudo
+    sudo \
     python3.10-venv
 
 # Download Python 3.10 and install it
