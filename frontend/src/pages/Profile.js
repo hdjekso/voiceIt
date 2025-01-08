@@ -358,11 +358,7 @@ const Profile = () => {
                   localStorage.removeItem('updatedName');
                   
                   // Log out the user
-                  const returnToUrl = process.env.NODE_ENV === 'production'
-                    ? 'https://voice-it-nine.vercel.app'
-                    : 'http://localhost:3000';
-
-                  logout({ returnTo: returnToUrl });
+                    logout({ returnTo: 'https://voice-it-nine.vercel.app' });
                 }}
               >
                 Log Out
