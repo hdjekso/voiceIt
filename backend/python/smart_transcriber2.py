@@ -31,11 +31,13 @@ class ChunkedAudioProcessor:
 
     def load_models(self):
         try:
-            print("Loading models...", file=sys.stderr)
+            print("Starting model load...", file=sys.stderr)
+            print("Loading Vosk model...", file=sys.stderr)
             self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
+            print("Vosk model loaded, loading summarizer...", file=sys.stderr)
             self.summarizer = pipeline("summarization")
             self.is_initialized = True
-            print("Models loaded successfully", file=sys.stderr)
+            print("All models loaded successfully", file=sys.stderr)
         except Exception as e:
             print(json.dumps({
                 "error": f"Model loading failed: {str(e)}",
