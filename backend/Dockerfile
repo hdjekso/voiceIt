@@ -15,8 +15,7 @@ RUN apt-get update && apt-get install -y \
     libbz2-dev \
     liblzma-dev \
     tk-dev \
-    sudo \
-    python3.10-venv
+    sudo 
 
 # Download Python 3.10 and install it
 RUN curl -o /tmp/Python-3.10.0.tgz https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz && \
@@ -30,6 +29,9 @@ RUN curl -o /tmp/Python-3.10.0.tgz https://www.python.org/ftp/python/3.10.0/Pyth
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3.10 get-pip.py && \
     rm get-pip.py
+
+#install venv package
+RUN sudo apt install python3.10-venv
 
 # Set the working directory
 WORKDIR /app
