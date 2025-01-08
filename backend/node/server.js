@@ -60,6 +60,7 @@ app.use(cors({
   methods: 'GET,POST,PATCH,DELETE',
   allowedHeaders: 'Content-Type,Authorization'
 }));
+app.options('/api/transcripts/upload', cors());  // Allow preflight for /upload route
 
 // routes
 app.use('/api/transcripts', transcriptRoutes)
