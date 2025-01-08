@@ -144,7 +144,7 @@ const uploadAudioFile = (req, res) => {
 
     const pythonRootDir = path.resolve(__dirname, '../../python');
     const pythonScriptPath = path.join(pythonRootDir, 'smart_transcriber2.py');
-    const pythonVenvPath = path.join(pythonRootDir, 'venv/Scripts/python.exe');
+    const pythonVenvPath = path.join(pythonRootDir, 'venv/bin/python');
 
     const pythonProcess = spawn(
       pythonVenvPath,
