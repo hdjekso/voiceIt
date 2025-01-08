@@ -45,10 +45,25 @@ RUN ls -al /app/backend/python
 RUN ls -al /app/backend/node
 
 # Create the Python virtual environment
-RUN python3.10 -m venv backend/python/venv
+#RUN python3.10 -m venv backend/python/venv
 
 # Install Python dependencies
-RUN backend/python/venv/bin/pip install --no-cache-dir -r backend/python/requirements.txt
+#RUN backend/python/venv/bin/pip install --no-cache-dir -r backend/python/requirements.txt
+
+# Install ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg
+
+# Install vosk model
+RUN python3.10 -m venv backend/python/venv && \
+    . backend/python/venv/bin/activate && \
+    pip install --no-cache-dir -r backend/python/requirements.txt && \
+    python -m vosk.model_downloader vosk-model-en-us-0.22
+
+# Make sure Python script is executable
+RUN chmod +x /app/backend/python/smart_transcriber2.py
+
+# Set correct permissions for venv
+RUN chmod -R 755 /app/backend/python/venv
 
 RUN ls -al /app/backend/python/venv
 RUN ls -al /app/backend/python/venv/bin
