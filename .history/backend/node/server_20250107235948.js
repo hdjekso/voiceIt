@@ -56,10 +56,11 @@ app.use(express.json());
 
 // Allow requests from React app
 app.use(cors({
-  origin: process.env.APP_URL, // Allow React app
+  origin: '*', // Allow React app
   methods: 'GET,POST,PATCH,DELETE',
   allowedHeaders: 'Content-Type,Authorization'
 }));
+app.options('/api/transcripts/upload', cors());  // Allow preflight for /upload route
 
 // routes
 app.use('/api/transcripts', transcriptRoutes)
@@ -72,15 +73,15 @@ app.use((req, res, next) => {
 })
 
 async function startServer() {
-  console.log(process.env.MONGO_URI)
-  await downloadFile(); //wait for checkpoint file to finish downloading
+  //await downloadFile(); //wait for checkpoint file to finish downloading
 
   // connect to db
+  const port = process.env.PORT || 4000;
   mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('connected to database')
     // listen to port
-    app.listen(process.env.PORT, () => {
+    app.listen(port, () => {
       console.log('listening for requests on port', process.env.PORT)
     })
   })

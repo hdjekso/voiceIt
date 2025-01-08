@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+uploads/
+.ipynb_checkpoints/
+
+# Node/Express
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+
+# React
+/frontend/build/
+/frontend/node_modules/
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs and debugging
+*.log
+logs/
+debug/
+
+# Cache and temp files
+*.cache
+*.tmp
+
+# Audio uploads and processing
+/backend/uploads/*
+!/backend/uploads/.gitkeep
+
+# Build outputs
+/build
+/dist
+
+# Audio files
+*.mp3
+*.wav
+*.m4a
+*.ogg
+*.flac
+
+# Exclude large checkpoint file and extraneous python test files
+backend/python/recasepunc/checkpoint
+backend/python/misc

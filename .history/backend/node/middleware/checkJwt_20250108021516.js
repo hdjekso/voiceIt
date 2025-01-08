@@ -1,13 +1,14 @@
 const { auth } = require('express-oauth2-jwt-bearer');
 
 const checkJwt = auth({
-  audience: `${process.env.AUTH0_AUDIENCE}`,
+  audience: process.env.AUTH0_AUDIENCE,
   issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}/`,
   algorithms: ['RS256']
 });
 
 module.exports = (req, res, next) => {
   checkJwt(req, res, (err) => {
+    console.log(process.env.AUTH0_AUDIENCE)
     if (err) {
       console.error('JWT Verification Error:', err);
       return res.status(401).json({ error: 'Unauthorized', message: err.message });
