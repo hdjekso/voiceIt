@@ -34,7 +34,6 @@ class ChunkedAudioProcessor:
         try:
             print("Starting model load...", file=sys.stderr)
             print("Loading Vosk model...", file=sys.stderr)
-            print(f"vosk model path: {VOSK_MODEL_PATH}", file=sys.stderr)
             try:
                 #self.vosk_model = Model(model_name="vosk-model-en-us-0.22") #use small model if too large
                 self.vosk_model = Model(model_path=VOSK_MODEL_PATH)
