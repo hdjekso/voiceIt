@@ -68,7 +68,7 @@ RUN apt-get install -y nodejs
 #Install node dependencies
 RUN cd backend/node && npm install
 
-RUN ls -al /app/backend/python/models/vosk-model-en-us-0.22/
+#RUN ls -al /app/backend/python/models/vosk-model-en-us-0.22/
 
 # Expose port for the application
 EXPOSE 4000
