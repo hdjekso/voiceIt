@@ -15,8 +15,15 @@ from pydub import AudioSegment
 from io import BytesIO
 import json
 import re
+from dotenv import load_dotenv
+import os
+from flask_cors import CORS
 
+load_dotenv()
+
+#NODE_URL = os.getenv('NODE_URL')
 app = Flask(__name__)
+CORS(app) #FIXME: allow reqs from node backend domain only for production
 
 processor = None
 
