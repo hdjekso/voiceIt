@@ -42,7 +42,7 @@ class ChunkedAudioProcessor:
                 print(f"Vosk error traceback: {traceback.format_exc()}", file=sys.stderr)
                 raise
             print("Vosk model loaded, loading summarizer...", file=sys.stderr)
-            self.summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-6-6") #use more lightweight model
+            self.summarizer = pipeline("summarization", model="t5-small") #use more lightweight model
             self.is_initialized = True
             print("All models loaded successfully", file=sys.stderr)
         except Exception as e:
