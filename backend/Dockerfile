@@ -37,7 +37,8 @@ RUN python3.10 -m venv backend/python/venv && \
 
 # Set environment variables
 ENV MODEL_DIR=/app/backend/python/models
-ENV VOSK_MODEL_NAME=vosk-model-en-us-0.22
+#ENV VOSK_MODEL_NAME=vosk-model-en-us-0.22
+ENV VOSK_MODEL_NAME=vosk-model-small-en-us-0.15
 
 # Download and prepare the Vosk model
 RUN mkdir -p $MODEL_DIR \
@@ -66,6 +67,8 @@ RUN apt-get install -y nodejs
 
 #Install node dependencies
 RUN cd backend/node && npm install
+
+RUN ls -al /app/backend/python/models/vosk-model-en-us-0.22/
 
 # Expose port for the application
 EXPOSE 4000
