@@ -58,6 +58,12 @@ RUN chmod -R 755 /app/backend/python/venv
 # Ensure uploaded files directory has proper permissions
 RUN mkdir -p /app/backend/node/uploads && chmod 777 /app/backend/node/uploads
 
+# Add NodeSource repository for Node.js
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash -
+
+# Install Node.js (includes npm)
+RUN apt-get install -y nodejs
+
 #Install node dependencies
 RUN cd backend/node && npm install
 
