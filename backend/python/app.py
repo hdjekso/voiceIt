@@ -53,8 +53,9 @@ class ChunkedAudioProcessor:
     def load_models(self):
         try:
             print("Loading models...", file=sys.stderr)
-            self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
-            self.summarizer = pipeline("summarization")
+            #self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
+            self.vosk_model = Model(model_name="vosk-model-small-en-us-0.15")
+            self.summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-6-6")
             self.is_initialized = True
             print("Models loaded successfully", file=sys.stderr)
         except Exception as e:
