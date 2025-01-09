@@ -8,13 +8,13 @@ const cors = require('cors')
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 
 // express app
 const app = express()
 
-//save the file here
+//save the recasepunc checkpoint file here
 const saveDirectory = path.join(__dirname, '../python/recasepunc');
-console.log('saveDirectory: ', saveDirectory)
 // Define fileURL
 const fileUrl = 'https://recasepunc-checkpoint-bucket.s3.us-west-2.amazonaws.com/checkpoint';
 
@@ -71,9 +71,23 @@ app.use((req, res, next) => {
   next()
 })
 
+const flaskUrl = process.env.FLASK_URL
+
+// Initialize python ai models (initialize route)
+async function initializeModels() {
+  try {
+    const response = await axios.get(`${flaskUrl}/initialize`);
+    console.log(response.data); // {"status": "Models initialized successfully"}
+  } catch (error) {
+    console.error('Error initializing models:', error.response ? error.response.data : error.message);
+  }
+}
+
 async function startServer() {
-  console.log(process.env.MONGO_URI)
+  //FIXME: remove for production
   await downloadFile(); //wait for checkpoint file to finish downloading
+
+  initializeModels();
 
   // connect to db
   mongoose.connect(process.env.MONGO_URI)

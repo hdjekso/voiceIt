@@ -3,7 +3,9 @@ const { createTranscriptService } = require('../services/createTranscriptService
 const mongoose = require('mongoose');
 const path = require('path');
 const { spawn } = require('child_process');
+const axios = require('axios');
 const fs = require('fs');
+const FormData = require('form-data');
 
 // get all transcripts (title and snippet only)
 const getTranscripts = async (req, res) => {
@@ -142,6 +144,92 @@ const uploadAudioFile = (req, res) => {
 
     const audioFilePath = path.join(__dirname, '../uploads', req.file.filename);
 
+    // Prepare the form data for sending the file to the Flask API
+    const form = new FormData();
+    form.append('audio_file', fs.createReadStream(audioFilePath));
+
+
+    console.log("starting transcription...")
+    //call flask api, process audio
+    axios.post(`${process.env.FLASK_URL}/process`, form, {
+      headers: {
+        ...form.getHeaders(),
+      },
+      responseType: 'stream',
+    })
+      .then(response => {
+        let transcriptionData = '';
+        let summary = '';
+        let isFirstChunk = true;  // Track whether it's the first chunk
+
+        response.data.on('data', (chunk) => {
+          let chunkStr = chunk.toString().replace(/\n/g, ' ');  // Clean up the chunk data
+          console.log('Received chunk:', chunkStr);
+          
+          // Add a space before the chunk unless it's the first one OR summary
+          if (!isFirstChunk && !chunkStr.startsWith('SUMMARY:')) {
+            chunkStr = ' ' + chunkStr;
+          } else {
+            isFirstChunk = false;  // After the first chunk, set the flag to false
+          }
+
+          // Add a newline after the last period in the chunk
+          const periodIndex = chunkStr.lastIndexOf('.');
+          if (periodIndex !== -1) {
+            // Remove the space after the last period (if it exists)
+            chunkStr = chunkStr.slice(0, periodIndex + 1) + '\n\n' + chunk.slice(periodIndex + 2);
+          }
+          chunkStr = chunkStr.slice(0, -1); //remove last char of chunk (whitespace)      
+
+          if (chunkStr.startsWith('SUMMARY:')) {
+            console.log("summary detected")
+            // Capture the summary
+            summary = chunkStr.replace('SUMMARY:', '').trim();
+          } else {
+            // Stream transcript chunks
+            transcriptionData += chunkStr;
+            res.write(JSON.stringify({ type: 'transcript', data: chunkStr }) + '\n');
+          }
+        });
+    
+        response.data.on('end', () => {
+          console.log('Python process closed');
+          transcriptionData += '.';
+          res.write(JSON.stringify({ type: 'transcript', data: '.' }) + '\n');
+          res.write(JSON.stringify({ type: 'summary', data: summary }) + '\n');
+          res.end();
+    
+          // Delete up the uploaded file
+          try {
+            if (fs.existsSync(audioFilePath)) {
+              fs.unlinkSync(audioFilePath); // Delete the uploaded file
+              console.log(`File ${audioFilePath} deleted successfully.`);
+            }
+          } catch (err) {
+            console.error(`Failed to delete file ${audioFilePath}:`, err);
+          }
+    
+          try {
+            const userId = req.user?.sub || 'default_user';
+            createTranscriptService({
+              title: 'Untitled Transcript',
+              snippet: transcriptionData.substring(0, 100),
+              transcription: transcriptionData,
+              summary: summary,
+              userId,
+            });
+            console.log('Transcript saved successfully');
+          } catch (error) {
+            console.error('Failed to save transcript:', error.message);
+          }
+        });
+      })
+      .catch((error) => {
+        console.error('Error during API call:', error);
+        res.status(500).json({ error: 'Error processing audio' });
+      });
+    /*console.log(audioFilePath)
+
     const pythonRootDir = path.resolve(__dirname, '../../python');
     const pythonScriptPath = path.join(pythonRootDir, 'smart_transcriber2.py');
     const pythonVenvPath = path.join(pythonRootDir, 'venv/Scripts/python.exe');
@@ -156,15 +244,9 @@ const uploadAudioFile = (req, res) => {
         },
         cwd: pythonRootDir
       }
-    );
+    );*/
 
-    let transcriptionData = '';
-    let summary = '';
-    let isFirstChunk = true;  // Track whether it's the first chunk
-
-    res.write(JSON.stringify({ type: 'start', message: 'Transcription started' }) + '\n');
-
-    pythonProcess.stdout.on('data', (data) => {
+    /*pythonProcess.stdout.on('data', (data) => {
       //const chunk = data.toString();
       let chunk = data.toString().replace(/\n/g, ' ');  // Remove newline characters
       console.log('Received chunk:', chunk);
@@ -239,7 +321,7 @@ const uploadAudioFile = (req, res) => {
     pythonProcess.on('error', (error) => {
       console.error('Failed to start Python process:', error);
       res.status(500).json({ error: 'Failed to start processing' });
-    });
+    });*/
   } catch (error) {
     console.error('Error in uploadAudioFile:', error);
     res.status(500).json({ error: 'Internal server error' });

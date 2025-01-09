@@ -145,10 +145,8 @@ const Home = () => {
   };
 
   const handleTranscriptDelete = (deletedId, title) => {
-    console.log('Deleting transcript:', deletedId, title);
     setTranscripts(prevTranscripts => {
       const newTranscripts = prevTranscripts.filter(transcript => transcript._id !== deletedId);
-      console.log('Updated transcripts after deletion:', newTranscripts);
       return newTranscripts;
     });
     setSnackbar({

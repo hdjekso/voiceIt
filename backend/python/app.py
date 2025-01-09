@@ -1,4 +1,4 @@
-#most recent version, splices chunks together without duplicates
+from flask import Flask, request, jsonify, Response
 from vosk import Model, KaldiRecognizer
 from pydub import AudioSegment
 from pydub.utils import which
@@ -13,8 +13,22 @@ import os
 import sys
 from pydub import AudioSegment
 from io import BytesIO
+import json
+import re
 
+app = Flask(__name__)
 
+processor = None
+
+def initialize_processor():
+    global processor
+    if processor is None:
+        print("Initializing models...")
+        processor = ChunkedAudioProcessor()
+        processor.load_models()
+        print("Models initialized successfully.")
+    else:
+        print("Processor already initialized.")
 
 class ChunkedAudioProcessor:
     def __init__(self):
@@ -23,7 +37,7 @@ class ChunkedAudioProcessor:
         self.vosk_model = None
         self.summarizer = None
         self.is_initialized = False
-        self.last_word = None #stores last word of previous chunk
+        self.last_word = None # stores last word of previous chunk
         AudioSegment.converter = which("ffmpeg")
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.recasepunc_script = os.path.abspath(os.path.join(self.current_dir, 'recasepunc', 'recasepunc.py'))
@@ -44,31 +58,28 @@ class ChunkedAudioProcessor:
             sys.exit(1)
 
     def remove_spaces(self, text):
-        text = re.sub(r'\s+\.', '.', text) #remove spaces before '.'
-        text = re.sub(r"\s*'\s*", "'", text) #remove spaces around '
-        text = re.sub(r'\s+\?', '?', text) #remove spaces before '?'
+        text = re.sub(r'\s+\.', '.', text) # remove spaces before '.'
+        text = re.sub(r"\s*'\s*", "'", text) # remove spaces around '
+        text = re.sub(r'\s+\?', '?', text) # remove spaces before '?'
         return text
 
     def clean_transcription(self, text):
         # First, remove any unnecessary spaces around apostrophes (if applicable)
         text = self.remove_spaces(text)
-
         # Remove duplicate last words caused by chunking, case insensitive, keeping the lowercase version
         cleaned_text = re.sub(r"(\b\w+\b)\s+(?i:\1)\b", lambda match: match.group(1).lower(), text)
-        
         # Remove unnecessary period added by recasepunc
         cleaned_text = re.sub(r"\.\s*$", "", cleaned_text.strip())
-        
         return cleaned_text
 
     def transcribe_audio_in_chunks(self, filename):
         if not self.is_initialized:
             return {"error": "Models not initialized"}
-
+        mp3_filename = None
         try:
             rec = KaldiRecognizer(self.vosk_model, self.FRAME_RATE)
             rec.SetWords(True)
-            
+
             audio = AudioSegment.from_file(filename)
             audio = audio.set_channels(self.CHANNELS)
             audio = audio.set_frame_rate(self.FRAME_RATE)
@@ -79,37 +90,33 @@ class ChunkedAudioProcessor:
                 # Convert WebM to MP3
                 mp3_filename = filename.rsplit('.', 1)[0] + '.mp3'
                 ffmpeg.input(filename).output(mp3_filename, acodec='libmp3lame').run()
-                audio = AudioSegment.from_file(mp3_filename)  # Load the MP3 file
+                audio = AudioSegment.from_file(mp3_filename) # Load the MP3 file
                 audio = audio.set_channels(self.CHANNELS)
                 audio = audio.set_frame_rate(self.FRAME_RATE)
-
-                # Save the audio file to disk (output_audio.mp3)
-                #audio.export('output_audio.mp3', format='mp3')
             elif file_extension not in SUPPORTED_FORMATS:
                 print(json.dumps({
                     "error": f"Unsupported file format: {file_extension}",
                     "supported_formats": list(SUPPORTED_FORMATS)
-                }), file=sys.stderr)
+                }), file=sys.stderr) 
                 return
 
             step = 45000
             full_transcript = ""
 
             for i in range(0, len(audio), step):
-                print(f"Progress: {i / len(audio) * 100:.2f}%", file=sys.stderr)
+                print(f"Progress: {i / len(audio) * 100:.2f}%", file=sys.stderr) 
                 segment = audio[i:i + step]
                 rec.AcceptWaveform(segment.raw_data)
                 result = rec.Result()
                 text = json.loads(result).get("text", "")
 
                 if text.strip():
-                    try:
-                        # Use sys.executable to ensure we use the same Python interpreter
+                    try: # Use sys.executable to ensure we use the same Python interpreter
                         cased = subprocess.check_output(
                             [sys.executable, self.recasepunc_script, "predict", self.recasepunc_checkpoint],
                             text=True,
                             input=text,
-                            stderr=subprocess.PIPE  # Capture stderr for better error reporting
+                            stderr=subprocess.PIPE # Capture stderr for better error reporting
                         )
                     except subprocess.CalledProcessError as e:
                         print(json.dumps({
@@ -119,27 +126,17 @@ class ChunkedAudioProcessor:
                         continue
 
                     punctuated = self.clean_transcription(self.remove_spaces(cased))
-
                     words = punctuated.split()
-                    #print(f"LAST_WORD: {self.last_word}\n\n")
                     newLastWord = punctuated.split()[0].lower()
-                    #print(f"NEW LAST WORD: {newLastWord}\n\n")
                     if self.last_word and newLastWord == self.last_word.lower():
-                        #print("DUPLICATE FOUND \n")
-                        #words = words[1:]  # Remove the duplicate first word
                         punctuated = " ".join(words[1:])
                     self.last_word = words[-1] if words else None
-
                     full_transcript += f" {punctuated}"
-                    #print(json.dumps({"partial_transcript": punctuated}), flush=True)
-                    print(f"{punctuated}", flush=True)
+                    yield f"{punctuated}"
 
             # Summarize the full transcript
             summary = self.summarize_text(full_transcript.strip())
-            #cleaned_full_transcript = self.clean_transcription(full_transcript.strip())
-            #print(json.dumps({"cleaned_full_transcript": cleaned_full_transcript.strip(), "summary": summary}), flush=True)
-            #print(json.dumps({"cleaned_full_transcript": full_transcript.strip(), "summary": summary}), flush=True)
-            print(f"SUMMARY:{summary}")
+            yield f"SUMMARY:{summary}"
 
         except Exception as e:
             print(json.dumps({
@@ -152,26 +149,9 @@ class ChunkedAudioProcessor:
             if mp3_filename and os.path.exists(mp3_filename):
                 try:
                     os.remove(mp3_filename)
-                    #print(f"Temporary file {mp3_filename} removed successfully.")
                 except Exception as e:
                     print(f"Failed to delete temporary file {mp3_filename}: {str(e)}")
 
-    '''def summarize_text(self, transcript):
-        try:
-            split_tokens = transcript.split(" ")
-            docs = []
-            for i in range(0, len(split_tokens), 850):
-                selection = " ".join(split_tokens[i:(i+850)])
-                docs.append(selection)
-
-            summaries = self.summarizer(docs)
-            return "\n\n".join([d["summary_text"] for d in summaries])
-
-        except Exception as e:
-            return {
-                "error": f"Summarization failed: {str(e)}",
-                "traceback": traceback.format_exc()
-            }'''
     def summarize_text(self, transcript):
         try:
             # Split into smaller chunks that respect sentence boundaries
@@ -183,8 +163,7 @@ class ChunkedAudioProcessor:
             for sentence in sentences:
                 # Rough estimate of tokens (words)
                 sentence_length = len(sentence.split())
-                
-                if current_length + sentence_length > 500:  # Conservative limit (half of max)
+                if current_length + sentence_length > 500:
                     if current_chunk:
                         chunks.append(' '.join(current_chunk))
                     current_chunk = [sentence]
@@ -192,16 +171,14 @@ class ChunkedAudioProcessor:
                 else:
                     current_chunk.append(sentence)
                     current_length += sentence_length
-            
             # Add the last chunk if it exists
             if current_chunk:
                 chunks.append(' '.join(current_chunk))
-            
             # Process each chunk and combine summaries
             summaries = []
             for chunk in chunks:
                 # Add safety check for minimum length
-                if len(chunk.split()) < 30:  # Skip very short chunks
+                if len(chunk.split()) < 30: # Skip very short chunks
                     summaries.append(chunk)
                     continue
                     
@@ -217,7 +194,6 @@ class ChunkedAudioProcessor:
             
             # Combine all summaries
             final_summary = ' '.join(summaries)
-            
             # If the combined summary is still too long, summarize it again
             if len(final_summary.split()) > 500:
                 try:
@@ -247,16 +223,44 @@ class ChunkedAudioProcessor:
             }), file=sys.stderr)
 
 
-def main():
-    if len(sys.argv) != 2:
-        print(json.dumps({"error": "Missing audio file path"}))
-        sys.exit(1)
+@app.route('/initialize', methods=['GET'])
+def initialize():
+    initialize_processor()
+    return jsonify({"status": "Models initialized successfully"})
 
-    processor = ChunkedAudioProcessor()
-    processor.load_models()
+@app.route('/process', methods=['POST'])
+def process_audio():
+    if processor is None:
+        return jsonify({"error": "Processor not initialized."}), 400
 
-    processor.process_audio_file(sys.argv[1])
+    audio_file = request.files.get('audio_file')
+    if not audio_file:
+        return jsonify({"error": "No audio file provided."}), 400
+
+    audio_file_path = os.path.join("/tmp", audio_file.filename)
+    audio_file.save(audio_file_path)
+    jsonify({"status": "audio file saved."})
+
+    def generate():
+        try:
+            # Yield the transcription and summary in chunks
+            for chunk in processor.transcribe_audio_in_chunks(audio_file_path):
+                yield chunk + "\n"
+        except Exception as e:
+            print(json.dumps({
+                "error": f"Processing failed: {str(e)}",
+                "traceback": traceback.format_exc()
+            }), file=sys.stderr)
+            yield json.dumps({
+                "error": f"Processing failed: {str(e)}",
+                "traceback": traceback.format_exc()
+            })
+
+    # Return the Response object with chunked data
+    return Response(generate(), content_type='text/plain;charset=utf-8', status=200)
+
 
 
 if __name__ == "__main__":
-    main()
+    #FIXME: change host for production
+    app.run(debug=True, host="127.0.0.1", port=5000)
