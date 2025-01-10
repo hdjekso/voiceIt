@@ -69,7 +69,7 @@ class ChunkedAudioProcessor:
             #self.vosk_model = Model(model_name="vosk-model-small-en-us-0.15")
             log_memory_usage("after loading vosk model")
             #self.summarizer = pipeline("summarization", model="t5-small")
-            self.summarizer = pipeline("summarization")
+            self.summarizer = pipeline("summarization", model="distilbart-6-6-cnn")
             self.is_initialized = True
             print("Models loaded successfully", file=sys.stderr)
             log_memory_usage("after loading summarizer model")
