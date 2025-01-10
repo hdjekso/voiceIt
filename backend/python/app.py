@@ -22,7 +22,7 @@ def log_memory_usage(stage):
     """Logs memory usage at different stages."""
     process = psutil.Process()
     mem_info = process.memory_info()
-    print(f"[{stage}] RAM usage: {mem_info.rss / (1024 * 1024):.2f} MB")
+    print(f"[{stage}] RAM usage: {mem_info.rss / (1024 * 1024):.2f} MB", file=sys.stderr)
 
 load_dotenv()
 
@@ -86,10 +86,10 @@ class ChunkedAudioProcessor:
             with open(temp_audio_path, "rb") as f:
                 data = f.read()
             response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data)
-            print(response.json(), file=sys.stderr)
+            #print(response.json(), file=sys.stderr)
             result = response.json()
             if isinstance(result, dict) and "text" in result:
-                print((result['text']).strip(), file=sys.stderr)
+                #print((result['text']).strip(), file=sys.stderr)
                 yield (result['text']).strip()
             else:
                 # Handle unexpected response format
@@ -100,13 +100,14 @@ class ChunkedAudioProcessor:
                 print(json.dumps(error_message), file=sys.stderr)
                 yield json.dumps(error_message)
             full_transcript = (result['text']).strip()
+            print("transcription completed", file=sys.stderr)
 
             log_memory_usage("after transcription")
             # Summarize the full transcript
             summary = self.summarize_text(full_transcript)
             yield f"SUMMARY:{summary}"
             print("summary completed", file=sys.stderr)
-            log_memory_usage("after summary")
+            log_memory_usage("after request")
 
         except Exception as e:
             print(json.dumps({
@@ -131,10 +132,10 @@ class ChunkedAudioProcessor:
         HUGGING_TOKEN = os.getenv('HUGGING_TOKEN')
         headers = {"Authorization": f"Bearer {HUGGING_TOKEN}"}
         response = requests.post(SUMMARIZATION_API_URL, headers=headers, json=payload)
-        print(f"summarized response body: {response.json()}", file=sys.stderr)
+        #print(f"summarized response body: {response.json()}", file=sys.stderr)
         result = response.json()
         if isinstance(result, list) and len(result) > 0:
-            print(result[0]['summary_text'], file=sys.stderr)
+            #print(result[0]['summary_text'], file=sys.stderr)
             return (result[0]['summary_text']).strip()
         else:
             # Handle unexpected response format
@@ -153,6 +154,7 @@ def initialize():
 
 @app.route('/process', methods=['POST'])
 def process_audio():
+    log_memory_usage("before request")
     if processor is None:
         return jsonify({"error": "Processor not initialized."}), 400
 
