@@ -84,8 +84,6 @@ async function initializeModels() {
 }
 
 async function startServer() {
-  //FIXME: remove for production
-  //await downloadFile(); //wait for checkpoint file to finish downloading
 
   initializeModels();
 

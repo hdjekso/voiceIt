@@ -185,7 +185,10 @@ const uploadAudioFile = (req, res) => {
             console.log("summary detected")
             // Capture the summary
             summary = chunkStr.replace('SUMMARY:', '').trim();
-          } else {
+          } else if (chunkStr.trim() === "transcription complete") { //append '.' to transcript
+            transcriptionData += '.';
+            res.write(JSON.stringify({ type: 'transcript', data: '.' }) + '\n');
+          } else { 
             // Stream transcript chunks
             transcriptionData += chunkStr;
             res.write(JSON.stringify({ type: 'transcript', data: chunkStr }) + '\n');
@@ -194,20 +197,10 @@ const uploadAudioFile = (req, res) => {
     
         response.data.on('end', () => {
           console.log('Python process closed');
-          transcriptionData += '.';
-          res.write(JSON.stringify({ type: 'transcript', data: '.' }) + '\n');
+          //transcriptionData += '.';
+          //res.write(JSON.stringify({ type: 'transcript', data: '.' }) + '\n');
           res.write(JSON.stringify({ type: 'summary', data: summary }) + '\n');
           res.end();
-    
-          // Delete up the uploaded file
-          try {
-            if (fs.existsSync(audioFilePath)) {
-              fs.unlinkSync(audioFilePath); // Delete the uploaded file
-              console.log(`File ${audioFilePath} deleted successfully.`);
-            }
-          } catch (err) {
-            console.error(`Failed to delete file ${audioFilePath}:`, err);
-          }
     
           try {
             const userId = req.user?.sub || 'default_user';
@@ -221,6 +214,16 @@ const uploadAudioFile = (req, res) => {
             console.log('Transcript saved successfully');
           } catch (error) {
             console.error('Failed to save transcript:', error.message);
+          }
+
+          // Delete up the uploaded file
+          try {
+            if (fs.existsSync(audioFilePath)) {
+              fs.unlinkSync(audioFilePath); // Delete the uploaded file
+              console.log(`File ${audioFilePath} deleted successfully.`);
+            }
+          } catch (err) {
+            console.error(`Failed to delete file ${audioFilePath}:`, err);
           }
         });
       })
