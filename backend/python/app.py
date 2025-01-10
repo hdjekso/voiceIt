@@ -62,17 +62,17 @@ class ChunkedAudioProcessor:
         log_memory_usage("Before loading models")
         try:
             print("Loading models...", file=sys.stderr)
-            vosk_model_path = os.getenv('VOSK_MODEL_PATH')
+            '''vosk_model_path = os.getenv('VOSK_MODEL_PATH')
             print(f"vosk model path: {vosk_model_path}")
-            self.vosk_model = Model(vosk_model_path)
-            #self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
+            self.vosk_model = Model(vosk_model_path)'''
+            self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
             #self.vosk_model = Model(model_name="vosk-model-small-en-us-0.15")
             log_memory_usage("after loading vosk model")
             #self.summarizer = pipeline("summarization", model="t5-small")
             self.summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-6-6")
             self.is_initialized = True
-            print("Models loaded successfully", file=sys.stderr)
             log_memory_usage("after loading summarizer model")
+            print("Models loaded successfully", file=sys.stderr)
         except Exception as e:
             print(json.dumps({
                 "error": f"Model loading failed: {str(e)}",
@@ -158,10 +158,12 @@ class ChunkedAudioProcessor:
                     yield f"{punctuated}"
 
             print("transcription completed", file=sys.stderr)
+            log_memory_usage("after transcription")
             # Summarize the full transcript
             summary = self.summarize_text(full_transcript.strip())
             yield f"SUMMARY:{summary}"
             print("summary completed", file=sys.stderr)
+            log_memory_usage("after summary")
 
         except Exception as e:
             print(json.dumps({
