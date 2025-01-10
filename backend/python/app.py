@@ -62,10 +62,10 @@ class ChunkedAudioProcessor:
         log_memory_usage("Before loading models")
         try:
             print("Loading models...", file=sys.stderr)
-            '''vosk_model_path = os.getenv('VOSK_MODEL_PATH')
+            vosk_model_path = os.getenv('VOSK_MODEL_PATH')
             print(f"vosk model path: {vosk_model_path}")
-            self.vosk_model = Model(vosk_model_path)'''
-            self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
+            self.vosk_model = Model(vosk_model_path)
+            #self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
             #self.vosk_model = Model(model_name="vosk-model-small-en-us-0.15")
             log_memory_usage("after loading vosk model")
             #self.summarizer = pipeline("summarization", model="t5-small")
