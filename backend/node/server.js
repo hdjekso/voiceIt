@@ -75,6 +75,7 @@ const flaskUrl = process.env.FLASK_URL
 
 // Initialize python ai models (initialize route)
 async function initializeModels() {
+  console.log(process.env.FLASK_URL)
   try {
     const response = await axios.get(`${flaskUrl}/initialize`);
     console.log(response.data); // {"status": "Models initialized successfully"}

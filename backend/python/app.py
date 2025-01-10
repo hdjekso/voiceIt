@@ -18,6 +18,14 @@ import re
 from dotenv import load_dotenv
 import os
 from flask_cors import CORS
+import psutil
+import time
+
+def log_memory_usage(stage):
+    """Logs memory usage at different stages."""
+    process = psutil.Process()
+    mem_info = process.memory_info()
+    print(f"[{stage}] RAM usage: {mem_info.rss / (1024 * 1024):.2f} MB")
 
 load_dotenv()
 
@@ -51,13 +59,20 @@ class ChunkedAudioProcessor:
         self.recasepunc_checkpoint = os.path.abspath(os.path.join(self.current_dir, 'recasepunc', 'checkpoint'))
 
     def load_models(self):
+        log_memory_usage("Before loading models")
         try:
             print("Loading models...", file=sys.stderr)
-            #self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
-            self.vosk_model = Model(model_name="vosk-model-small-en-us-0.15")
-            self.summarizer = pipeline("summarization", model="t5-small")
+            '''vosk_model_path = os.getenv('VOSK_MODEL_PATH')
+            print(f"vosk model path: {vosk_model_path}")
+            self.vosk_model = Model(vosk_model_path)'''
+            self.vosk_model = Model(model_name="vosk-model-en-us-0.22")
+            #self.vosk_model = Model(model_name="vosk-model-small-en-us-0.15")
+            log_memory_usage("after loading vosk model")
+            #self.summarizer = pipeline("summarization", model="t5-small")
+            self.summarizer = pipeline("summarization")
             self.is_initialized = True
             print("Models loaded successfully", file=sys.stderr)
+            log_memory_usage("after loading summarizer model")
         except Exception as e:
             print(json.dumps({
                 "error": f"Model loading failed: {str(e)}",
@@ -142,6 +157,7 @@ class ChunkedAudioProcessor:
                     full_transcript += f" {punctuated}"
                     yield f"{punctuated}"
 
+            print("transcription completed", file=sys.stderr)
             # Summarize the full transcript
             summary = self.summarize_text(full_transcript.strip())
             yield f"SUMMARY:{summary}"

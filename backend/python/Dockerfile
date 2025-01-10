@@ -4,6 +4,7 @@ FROM python:3.10-slim
 # Set environment variables upfront for better caching and clarity
 ENV MODEL_DIR=/app/models
 ENV VOSK_MODEL_NAME=vosk-model-en-us-0.22
+#ENV VOSK_MODEL_NAME=vosk-model-small-en-us-0.15
 ENV VOSK_MODEL_PATH=${MODEL_DIR}/${VOSK_MODEL_NAME}
 
 # Install system dependencies
