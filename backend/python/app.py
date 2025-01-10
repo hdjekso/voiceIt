@@ -69,7 +69,7 @@ class ChunkedAudioProcessor:
             #self.vosk_model = Model(model_name="vosk-model-small-en-us-0.15")
             log_memory_usage("after loading vosk model")
             #self.summarizer = pipeline("summarization", model="t5-small")
-            self.summarizer = pipeline("summarization", model="distilbart-6-6-cnn")
+            self.summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-6-6")
             self.is_initialized = True
             print("Models loaded successfully", file=sys.stderr)
             log_memory_usage("after loading summarizer model")
@@ -161,6 +161,7 @@ class ChunkedAudioProcessor:
             # Summarize the full transcript
             summary = self.summarize_text(full_transcript.strip())
             yield f"SUMMARY:{summary}"
+            print("summary completed", file=sys.stderr)
 
         except Exception as e:
             print(json.dumps({
