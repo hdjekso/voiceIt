@@ -6,162 +6,140 @@ import ffmpeg
 import sys
 import traceback
 import os
-import sys
-from pydub import AudioSegment
 from io import BytesIO
-import json
 from dotenv import load_dotenv
-import os
 from flask_cors import CORS
 import psutil
 import time
 import requests
 
-
 def log_memory_usage(stage):
-    """Logs memory usage at different stages."""
     process = psutil.Process()
     mem_info = process.memory_info()
     print(f"[{stage}] RAM usage: {mem_info.rss / (1024 * 1024):.2f} MB", file=sys.stderr)
 
 load_dotenv()
 
-#NODE_URL = os.getenv('NODE_URL')
 app = Flask(__name__)
 NODE_URL = os.getenv('NODE_URL')
 LOCALHOST_URL = os.getenv('LOCALHOST_URL')
-print(f"node url: {NODE_URL}", file=sys.stderr)
-print(f"localhost url: {LOCALHOST_URL}", file=sys.stderr)
 CORS(app, resources={r"/*": {"origins": [NODE_URL, LOCALHOST_URL]}})
-#CORS(app)
 
-processor = None
-
-def initialize_processor():
-    global processor
-    processor = None
-    if processor is None:
-        print("Initializing models...")
-        processor = ChunkedAudioProcessor()
-        print("Processor initialized successfully.")
-    else:
-        print("Processor already initialized.")
+CHUNK_SIZE = 60 * 15 * 100  # 1.5 min in milliseconds
+MAX_WORKERS = 3  # Limit concurrent processing
 
 class ChunkedAudioProcessor:
     def __init__(self):
         self.FRAME_RATE = 16000
         self.CHANNELS = 1
-        self.summarizer = None
         AudioSegment.converter = which("ffmpeg")
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        
+    def process_audio_chunk(self, chunk):
+        """Process a single audio chunk."""
+        temp_chunk_path = f"temp_chunk_{time.time()}.wav"
+        try:
+            chunk.export(temp_chunk_path, format="wav")
+            
+            TRANSCRIPTION_API_URL = "https://api-inference.huggingface.co/models/openai/whisper-large-v3"
+            headers = {"Authorization": f"Bearer {os.getenv('HUGGING_TOKEN')}"}
+            
+            with open(temp_chunk_path, "rb") as f:
+                data = f.read()
+            response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data)
+            result = response.json()
+            
+            if isinstance(result, dict) and "text" in result:
+                return result["text"].strip()
+            return ""
+            
+        finally:
+            if os.path.exists(temp_chunk_path):
+                os.remove(temp_chunk_path)
 
     def transcribe_audio_in_chunks(self, filename):
-        mp3_filename = None
         try:
-
+            # Convert input file to standard format
             audio = AudioSegment.from_file(filename)
             audio = audio.set_channels(self.CHANNELS)
             audio = audio.set_frame_rate(self.FRAME_RATE)
 
-            SUPPORTED_FORMATS = {'mp3', 'wav', 'flac', 'aac', 'ogg'}
-            file_extension = filename.split('.')[-1].lower()
-            if file_extension == 'webm':
-                # Convert WebM to MP3
-                mp3_filename = filename.rsplit('.', 1)[0] + '.mp3'
-                ffmpeg.input(filename).output(mp3_filename, acodec='libmp3lame').run()
-                audio = AudioSegment.from_file(mp3_filename) # Load the MP3 file
-                audio = audio.set_channels(self.CHANNELS)
-                audio = audio.set_frame_rate(self.FRAME_RATE)
-            elif file_extension not in SUPPORTED_FORMATS:
-                print(json.dumps({
-                    "error": f"Unsupported file format: {file_extension}",
-                    "supported_formats": list(SUPPORTED_FORMATS)
-                }), file=sys.stderr) 
-                return
-
-            step = 45000
-            full_transcript = ""
-
-            # Export processed audio to a temporary file
-            temp_audio_path = "temp_audio.wav"
-            audio.export(temp_audio_path, format="wav")
-
-            TRANSCRIPTION_API_URL = "https://api-inference.huggingface.co/models/openai/whisper-large-v3"
-            HUGGING_TOKEN = os.getenv('HUGGING_TOKEN')
-            headers = {"Authorization": f"Bearer {HUGGING_TOKEN}"}
-            with open(temp_audio_path, "rb") as f:
-                data = f.read()
-            response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data)
-            #print(response.json(), file=sys.stderr)
-            result = response.json()
-            if isinstance(result, dict) and "text" in result:
-                #print((result['text']).strip(), file=sys.stderr)
-                yield (result['text']).strip()
-            else:
-                # Handle unexpected response format
-                error_message = {
-                    "error": "Unexpected response format",
-                    "response": result
-                }
-                print(json.dumps(error_message), file=sys.stderr)
-                yield json.dumps(error_message)
-            full_transcript = (result['text']).strip()
-            print("transcription completed", file=sys.stderr)
-
-            log_memory_usage("after transcription")
-            # Summarize the full transcript
-            summary = self.summarize_text(full_transcript)
-            yield f"SUMMARY:{summary}"
-            print("summary completed", file=sys.stderr)
-            log_memory_usage("after request")
-
+            # Process audio in chunks
+            length_ms = len(audio)
+            full_transcript = []
+            
+            for i in range(0, length_ms, CHUNK_SIZE):
+                chunk = audio[i:min(i + CHUNK_SIZE, length_ms)]
+                
+                # Process chunk and get transcription
+                chunk_transcript = self.process_audio_chunk(chunk)
+                if chunk_transcript:
+                    full_transcript.append(chunk_transcript)
+                    # Yield intermediate results
+                    yield f"{chunk_transcript}\n"
+                
+                # Free up memory
+                del chunk
+                
+                # Log memory usage
+                log_memory_usage(f"chunk_{i}")
+            
+            # Combine all transcripts
+            complete_transcript = " ".join(full_transcript)
+            
+            # Generate summary only after all chunks are processed
+            if complete_transcript:
+                summary = self.summarize_text(complete_transcript)
+                yield f"SUMMARY:{summary}\n"
+            
         except Exception as e:
-            print(json.dumps({
+            error_msg = {
                 "error": f"Transcription failed: {str(e)}",
                 "traceback": traceback.format_exc()
-            }), file=sys.stderr)
+            }
+            print(json.dumps(error_msg), file=sys.stderr)
+            yield json.dumps(error_msg)
         
         finally:
-            # Cleanup temporary MP3 file if it exists
-            if mp3_filename and os.path.exists(mp3_filename):
-                try:
-                    os.remove(mp3_filename)
-                except Exception as e:
-                    print(f"Failed to delete temporary file {mp3_filename}: {str(e)}")
+            # Cleanup
+            if os.path.exists(filename):
+                os.remove(filename)
 
     def summarize_text(self, transcript):
-        print(f"received transcript to summarize: {transcript}")
-        payload = {
-            "inputs": transcript
-        }
+        # Break long transcripts into smaller chunks for summarization
+        max_chunk_length = 1000  # Maximum characters per chunk
+        chunks = [transcript[i:i + max_chunk_length] 
+                 for i in range(0, len(transcript), max_chunk_length)]
+        
+        summaries = []
         SUMMARIZATION_API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
-        HUGGING_TOKEN = os.getenv('HUGGING_TOKEN')
-        headers = {"Authorization": f"Bearer {HUGGING_TOKEN}"}
-        response = requests.post(SUMMARIZATION_API_URL, headers=headers, json=payload)
-        #print(f"summarized response body: {response.json()}", file=sys.stderr)
-        result = response.json()
-        if isinstance(result, list) and len(result) > 0:
-            #print(result[0]['summary_text'], file=sys.stderr)
-            return (result[0]['summary_text']).strip()
-        else:
-            # Handle unexpected response format
-            error_message = {
-                "error": "Unexpected response format",
-                "response": result
-            }
-            print(json.dumps(error_message), file=sys.stderr)
-            return json.dumps(error_message)
+        headers = {"Authorization": f"Bearer {os.getenv('HUGGING_TOKEN')}"}
+        
+        for chunk in chunks:
+            payload = {"inputs": chunk}
+            response = requests.post(SUMMARIZATION_API_URL, headers=headers, json=payload)
+            result = response.json()
+            
+            if isinstance(result, list) and len(result) > 0:
+                summaries.append(result[0]['summary_text'].strip())
+        
+        # Combine chunk summaries
+        return " ".join(summaries)
 
+processor = None
 
-@app.route('/initialize', methods=['GET'])
-def initialize():
-    initialize_processor()
-    return jsonify({"status": "Processor initialized successfully"})
+def initialize_processor():
+    global processor
+    if processor is None:
+        print("Initializing models...")
+        processor = ChunkedAudioProcessor()
+        print("Processor initialized successfully.")
 
 @app.route('/process', methods=['POST'])
 def process_audio():
     initialize_processor()
     log_memory_usage("before request")
+    
     if processor is None:
         return jsonify({"error": "Processor not initialized."}), 400
 
@@ -169,31 +147,23 @@ def process_audio():
     if not audio_file:
         return jsonify({"error": "No audio file provided."}), 400
 
-    audio_file_path = os.path.join("/tmp", audio_file.filename)
+    # Save file with unique timestamp to prevent conflicts
+    timestamp = int(time.time())
+    audio_file_path = os.path.join("/tmp", f"audio_{timestamp}_{audio_file.filename}")
     audio_file.save(audio_file_path)
-    jsonify({"status": "audio file saved."})
 
     def generate():
         try:
-            # Yield the transcription and summary in chunks
             for chunk in processor.transcribe_audio_in_chunks(audio_file_path):
-                yield chunk + "\n"
-                #yield json.dumps(chunk) + "\n"
+                yield chunk
         except Exception as e:
-            print(json.dumps({
+            error_msg = {
                 "error": f"Processing failed: {str(e)}",
                 "traceback": traceback.format_exc()
-            }), file=sys.stderr)
-            yield json.dumps({
-                "error": f"Processing failed: {str(e)}",
-                "traceback": traceback.format_exc()
-            })
+            }
+            yield json.dumps(error_msg)
 
-    # Return the Response object with chunked data
     return Response(generate(), content_type='text/plain;charset=utf-8', status=200)
 
-
-
 if __name__ == "__main__":
-    #FIXME: change host for production
     app.run(debug=True, host="0.0.0.0", port=5000)

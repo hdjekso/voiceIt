@@ -47,7 +47,7 @@ async function initializeModels() {
 
 async function startServer() {
 
-  initializeModels();
+  //initializeModels();
 
   // connect to db
   mongoose.connect(process.env.MONGO_URI)

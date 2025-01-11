@@ -163,11 +163,12 @@ const uploadAudioFile = (req, res) => {
         let isFirstChunk = true;  // Track whether it's the first chunk
 
         response.data.on('data', (chunk) => {
-          let chunkStr = chunk.toString().replace(/\n/g, ' ');  // Clean up the chunk data
+          //let chunkStr = chunk.toString().replace(/\n/g, ' ');  // Clean up the chunk data
+          let chunkStr = chunk.toString()
           console.log('Received chunk:', chunkStr);
           
           // Add a space before the chunk unless it's the first one OR summary
-          if (!isFirstChunk && !chunkStr.startsWith('SUMMARY:')) {
+          /*if (!isFirstChunk && !chunkStr.startsWith('SUMMARY:')) {
             chunkStr = ' ' + chunkStr;
           } else {
             isFirstChunk = false;  // After the first chunk, set the flag to false
@@ -179,7 +180,7 @@ const uploadAudioFile = (req, res) => {
             // Remove the space after the last period (if it exists)
             chunkStr = chunkStr.slice(0, periodIndex + 1) + '\n\n' + chunk.slice(periodIndex + 2);
           }
-          chunkStr = chunkStr.slice(0, -1); //remove last char of chunk (whitespace)      
+          chunkStr = chunkStr.slice(0, -1); //remove last char of chunk (whitespace)   */   
           if (chunkStr.includes("too busy")) {
             res.write(JSON.stringift({ type: 'error', data: 'too busy'}) + '\n')
           }
@@ -193,7 +194,7 @@ const uploadAudioFile = (req, res) => {
           } else { 
             // Stream transcript chunks
             transcriptionData += chunkStr;
-            res.write(JSON.stringify({ type: 'transcript', data: chunkStr }) + '\n');
+            res.write(JSON.stringify({ type: 'transcript', data: chunkStr + '\n' }) + '\n');
           }
         });
     
@@ -233,100 +234,6 @@ const uploadAudioFile = (req, res) => {
         console.error('Error during API call:', error);
         res.status(500).json({ error: 'Error processing audio' });
       });
-    /*console.log(audioFilePath)
-
-    const pythonRootDir = path.resolve(__dirname, '../../python');
-    const pythonScriptPath = path.join(pythonRootDir, 'smart_transcriber2.py');
-    const pythonVenvPath = path.join(pythonRootDir, 'venv/Scripts/python.exe');
-
-    const pythonProcess = spawn(
-      pythonVenvPath,
-      [pythonScriptPath, audioFilePath],
-      {
-        env: {
-          ...process.env,
-          PYTHONPATH: `${pythonRootDir}${path.delimiter}${path.join(pythonRootDir, 'recasepunc')}`
-        },
-        cwd: pythonRootDir
-      }
-    );*/
-
-    /*pythonProcess.stdout.on('data', (data) => {
-      //const chunk = data.toString();
-      let chunk = data.toString().replace(/\n/g, ' ');  // Remove newline characters
-      console.log('Received chunk:', chunk);
-
-      // Add a space before the chunk unless it's the first one OR summary
-      if (!isFirstChunk && !chunk.startsWith('SUMMARY:')) {
-        chunk = ' ' + chunk;
-      } else {
-        isFirstChunk = false;  // After the first chunk, set the flag to false
-      }
-
-      // Add a newline after the last period in the chunk
-      const periodIndex = chunk.lastIndexOf('.');
-      if (periodIndex !== -1) {
-        // Remove the space after the last period (if it exists)
-        chunk = chunk.slice(0, periodIndex + 1) + '\n\n' + chunk.slice(periodIndex + 2);
-      }
-      chunk = chunk.slice(0, -1); //remove last char of chunk (whitespace)      
-
-      if (chunk.startsWith('SUMMARY:')) {
-        console.log("summary detected")
-        // Capture the summary
-        summary = chunk.replace('SUMMARY:', '').trim();
-      } else {
-        // Stream transcript chunks
-        transcriptionData += chunk;
-        res.write(JSON.stringify({ type: 'transcript', data: chunk }) + '\n');
-      }
-    });
-
-    pythonProcess.stderr.on('data', (data) => {
-      console.error(`Python error: ${data.toString()}`);
-    });
-
-    pythonProcess.on('close', async (code) => {
-      console.log('Python process closed with code:', code);
-      transcriptionData += '.';
-      res.write(JSON.stringify({ type: 'transcript', data: '.' }) + '\n');
-      //res.write(JSON.stringify({ type: 'end', message: 'Transcription completed' }) + '\n');
-      res.write(JSON.stringify({ type: 'summary', data: summary }) + '\n');
-      res.end();
-
-        // Delete up the uploaded file
-        try {
-          if (fs.existsSync(audioFilePath)) {
-            fs.unlinkSync(audioFilePath); // Delete the uploaded file
-            console.log(`File ${audioFilePath} deleted successfully.`);
-          }
-        } catch (err) {
-          console.error(`Failed to delete file ${audioFilePath}:`, err);
-        }
-
-      if (code === 0) {
-        try {
-          const userId = req.user?.sub || 'default_user';
-          await createTranscriptService({
-            title: 'Untitled Transcript',
-            snippet: transcriptionData.substring(0, 100),
-            transcription: transcriptionData,
-            summary: summary,
-            userId,
-          });
-          console.log('Transcript saved successfully');
-        } catch (error) {
-          console.error('Failed to save transcript:', error.message);
-        }
-      } else {
-        console.error('Error processing audio file');
-      }
-    });
-
-    pythonProcess.on('error', (error) => {
-      console.error('Failed to start Python process:', error);
-      res.status(500).json({ error: 'Failed to start processing' });
-    });*/
   } catch (error) {
     console.error('Error in uploadAudioFile:', error);
     res.status(500).json({ error: 'Internal server error' });
