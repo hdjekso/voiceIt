@@ -25,7 +25,7 @@ NODE_URL = os.getenv('NODE_URL')
 LOCALHOST_URL = os.getenv('LOCALHOST_URL')
 CORS(app, resources={r"/*": {"origins": [NODE_URL, LOCALHOST_URL]}})
 
-CHUNK_SIZE = 60 * 15 * 100  # 1.5 min in milliseconds
+CHUNK_SIZE = 60 * 1 * 1000  # 1.5 min in milliseconds
 MAX_WORKERS = 3  # Limit concurrent processing
 
 class ChunkedAudioProcessor:
@@ -38,40 +38,19 @@ class ChunkedAudioProcessor:
     def process_audio_chunk(self, chunk):
         """Process a single audio chunk."""
         temp_chunk_path = f"temp_chunk_{time.time()}.wav"
-        try:
-            chunk.export(temp_chunk_path, format="wav")
-            
-            TRANSCRIPTION_API_URL = "https://api-inference.huggingface.co/models/openai/whisper-large-v3"
-            headers = {"Authorization": f"Bearer {os.getenv('HUGGING_TOKEN')}"}
-            
-            with open(temp_chunk_path, "rb") as f:
-                data = f.read()
-            response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data)
-            result = response.json()
-            
-            if isinstance(result, dict) and "text" in result:
-                return result["text"].strip()
-            return ""
-            
-        finally: #delete all audio files
-            '''if os.path.exists(temp_chunk_path):
-                os.remove(temp_chunk_path)'''
-            # Get the current directory
-            current_directory = os.getcwd()
-
-            # Loop through all files in the directory
-            for file_name in os.listdir(current_directory):
-                # Check if the file has a .wav extension
-                if file_name.endswith('.wav'):
-                    file_path = os.path.join(current_directory, file_name)
-                    try:
-                        # Delete the file
-                        os.remove(file_path)
-                        print(f"Deleted: {file_name}")
-                    except Exception as e:
-                        print(f"Error deleting {file_name}: {e}")
-
-            print("All .wav files have been deleted.")
+        chunk.export(temp_chunk_path, format="wav")
+        
+        TRANSCRIPTION_API_URL = "https://api-inference.huggingface.co/models/openai/whisper-large-v3"
+        headers = {"Authorization": f"Bearer {os.getenv('HUGGING_TOKEN')}"}
+        
+        with open(temp_chunk_path, "rb") as f:
+            data = f.read()
+        response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data)
+        result = response.json()
+        
+        if isinstance(result, dict) and "text" in result:
+            return result["text"].strip()
+        return ""
 
     def transcribe_audio_in_chunks(self, filename):
         mp3_filename = None
@@ -133,10 +112,21 @@ class ChunkedAudioProcessor:
             print(json.dumps(error_msg), file=sys.stderr)
             yield json.dumps(error_msg)
         
-        finally:
-            # Cleanup
-            if os.path.exists(filename):
-                os.remove(filename)
+        current_directory = os.getcwd()
+
+        # Loop through all files in the directory
+        for file_name in os.listdir(current_directory):
+            # Check if the file has a .wav extension
+            if file_name.endswith('.wav'):
+                file_path = os.path.join(current_directory, file_name)
+                try:
+                    # Delete the file
+                    os.remove(file_path)
+                    print(f"Deleted: {file_name}")
+                except Exception as e:
+                    print(f"Error deleting {file_name}: {e}")
+
+        print("All .wav files have been deleted.")
 
     def summarize_text(self, transcript):
         # Break long transcripts into smaller chunks for summarization
