@@ -151,17 +151,27 @@ const NewTranscript = () => {
         </>
       );
     }
+    if (activeTab === 'transcript' && summary) {
+      return (
+        <Typography sx={{ whiteSpace: 'pre-wrap', fontSize: '1.75rem' }}>
+          {summary || 'Summary will be displayed here once available.'}
+        </Typography>
+      );
+    } else if (activeTab === 'summary') {
+      return (
+        <Container sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 4, pb: 6 }}>
+          <CircularProgress sx={{ mt: 2 }}/>
+          <Typography sx={{ color: 'gray', fontSize: '1.75rem', mt: 1 }}>
+            Summarizing...
+          </Typography>
+        </Container>
+      );
+    }
 
     if (activeTab === 'transcript') {
       return (
         <Typography sx={{ whiteSpace: 'pre-wrap', fontSize: '1.75rem' }}>
           {transcript}
-        </Typography>
-      );
-    } else if (activeTab === 'summary') {
-      return (
-        <Typography sx={{ whiteSpace: 'pre-wrap', fontSize: '1.75rem' }}>
-          {summary || 'Summary will be displayed here once available.'}
         </Typography>
       );
     }
