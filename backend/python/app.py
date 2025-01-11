@@ -28,9 +28,9 @@ load_dotenv()
 
 #NODE_URL = os.getenv('NODE_URL')
 app = Flask(__name__)
-CORS(app) #FIXME: allow reqs from node backend domain only for production
+#CORS(app) #FIXME: allow reqs from node backend domain only for production
 NODE_URL = os.getenv('NODE_URL')
-#CORS(app, resources={r"/*": {"origins": NODE_URL}})
+CORS(app, resources={r"/*": {"origins": NODE_URL}})
 
 processor = None
 
