@@ -254,7 +254,7 @@ const NewTranscript = () => {
           </Alert>
         </Snackbar>
         {activeTab === 'summary' && (
-          <Typography sx={{fontSize: '1.1rem'}}>
+          <Typography variant="h6" sx={{ textAlign: 'center', color: 'text.secondary', fontSize: '1.25rem' }}>
             Note: the summary may not be accurate for overly short audio files/recordings.
           </Typography>
         )}
