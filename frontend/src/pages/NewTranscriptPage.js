@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Typography, Container, Paper, CircularProgress, IconButton, Box, Tabs, Tab, Snackbar } from '@mui/material';
+import { Typography, Container, Paper, CircularProgress, IconButton, Box, Tabs, Tab, Snackbar, Alert } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FetchClient } from '../utils/fetchClient';
