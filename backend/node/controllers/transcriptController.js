@@ -193,7 +193,7 @@ const uploadAudioFile = (req, res) => {
             res.write(JSON.stringify({ type: 'transcript', data: '.' }) + '\n');
           } else { 
             // Stream transcript chunks
-            transcriptionData += chunkStr;
+            transcriptionData += chunkStr + '\n';
             res.write(JSON.stringify({ type: 'transcript', data: chunkStr + '\n' }) + '\n');
           }
         });
