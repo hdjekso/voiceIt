@@ -32,12 +32,13 @@ NODE_URL = os.getenv('NODE_URL')
 LOCALHOST_URL = os.getenv('LOCALHOST_URL')
 print(f"node url: {NODE_URL}", file=sys.stderr)
 print(f"localhost url: {LOCALHOST_URL}", file=sys.stderr)
-CORS(app, resources={r"/*": {"origins": '*'}})
+#CORS(app, resources={r"/*": {"origins": [NODE_URL, LOCALHOST_URL]}})
+CORS(app)
 
 processor = None
 
 def initialize_processor():
-    global processor
+    global processor = None
     if processor is None:
         print("Initializing models...")
         processor = ChunkedAudioProcessor()
@@ -158,6 +159,7 @@ def initialize():
 
 @app.route('/process', methods=['POST'])
 def process_audio():
+    initialize_processor()
     log_memory_usage("before request")
     if processor is None:
         return jsonify({"error": "Processor not initialized."}), 400
