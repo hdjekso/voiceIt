@@ -31,7 +31,7 @@ app = Flask(__name__)
 #CORS(app) #FIXME: allow reqs from node backend domain only for production
 NODE_URL = os.getenv('NODE_URL')
 print(f"node url: {NODE_URL}")
-CORS(app, resources={r"/*": {"origins": '*'}})
+CORS(app, resources={r"/*": {"origins": [NODE_URL, "http://localhost:3000"]}})
 
 processor = None
 
