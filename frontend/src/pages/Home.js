@@ -62,6 +62,11 @@ const Home = () => {
     if (savedName) {
       setUpdatedName(savedName);
     }
+    setSnackbar({
+      open: true,
+      message: `Transcript "${updatedName}" has been updated`,
+      severity: 'success'
+    });
   }, []);
 
   const theme = createTheme({
