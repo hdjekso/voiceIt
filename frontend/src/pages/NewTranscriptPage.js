@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Typography, Container, Paper, CircularProgress, IconButton, Box, Tabs, Tab } from '@mui/material';
+import { Typography, Container, Paper, CircularProgress, IconButton, Box, Tabs, Tab, Snackbar } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FetchClient } from '../utils/fetchClient';
@@ -15,9 +15,21 @@ const NewTranscript = () => {
   const [transcript, setTranscript] = useState('');
   const [summary, setSummary] = useState('');
   const [activeTab, setActiveTab] = useState('transcript');
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   const audioFile = location.state?.audioFile;
   const [title, setTitle] = useState(location.state?.title || 'Untitled Transcript');
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
 
   //background color
   useEffect(() => {
@@ -87,6 +99,16 @@ const NewTranscript = () => {
               } else if (parsed.type === 'summary') {
                 // Update summary separately
                 setSummary(parsed.data);
+              } else if (parsed.type === 'error') { //models too busy
+                setSnackbar({
+                  open: true,
+                  message: 'Models are busy, please try again later.',
+                  severity: 'warning'
+                });
+                // Wait for 3 seconds before navigating
+                setTimeout(() => {
+                  navigate('/dashboard');
+                }, 3000);
               }
             } catch (err) {
               console.warn('Failed to parse chunk:', err.message);
@@ -151,7 +173,7 @@ const NewTranscript = () => {
         </>
       );
     }
-    if (activeTab === 'transcript' && summary) {
+    if (activeTab === 'summary' && summary) {
       return (
         <Typography sx={{ whiteSpace: 'pre-wrap', fontSize: '1.75rem' }}>
           {summary || 'Summary will be displayed here once available.'}
@@ -214,6 +236,23 @@ const NewTranscript = () => {
 
           {renderContent()}
         </Paper>
+        <Snackbar 
+          open={snackbar.open} 
+          autoHideDuration={6000} 
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <Alert 
+            onClose={handleSnackbarClose} 
+            severity={snackbar.severity}
+            sx={{ 
+              width: '100%',
+              fontSize: '1.4rem'
+            }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Container>
     </div>
   );
