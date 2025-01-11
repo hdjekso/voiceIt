@@ -330,6 +330,11 @@ const TranscriptDetails = () => {
             </>
           )}
         </Paper>
+        {activeTab === 'summary' && (
+          <Typography sx={{fontSize: '1.1rem'}}>
+            Note: the summary may not be accurate for overly short audio files/recordings.
+          </Typography>
+        )}
       </Container>
     </div>
   );
