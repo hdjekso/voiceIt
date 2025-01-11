@@ -38,7 +38,8 @@ CORS(app)
 processor = None
 
 def initialize_processor():
-    global processor = None
+    global processor
+    processor = None
     if processor is None:
         print("Initializing models...")
         processor = ChunkedAudioProcessor()
