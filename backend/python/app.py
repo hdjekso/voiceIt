@@ -53,7 +53,7 @@ class ChunkedAudioProcessor:
         return ""
 
     def transcribe_audio_in_chunks(self, filename):
-        mp3_filename = None
+        wav_filename = None
         try:
             # Convert input file to standard format
             audio = AudioSegment.from_file(filename)
@@ -64,9 +64,9 @@ class ChunkedAudioProcessor:
             file_extension = filename.split('.')[-1].lower()
             if file_extension == 'webm':
                 # Convert WebM to MP3
-                mp3_filename = filename.rsplit('.', 1)[0] + '.mp3'
-                ffmpeg.input(filename).output(mp3_filename, acodec='libmp3lame').run()
-                audio = AudioSegment.from_file(mp3_filename) # Load the MP3 file
+                wav_filename = filename.rsplit('.', 1)[0] + '.wav'
+                ffmpeg.input(filename).output(wav_filename, acodec='pcm_s16le').run()
+                audio = AudioSegment.from_file(wav_filename) # Load the wav file
                 audio = audio.set_channels(self.CHANNELS)
                 audio = audio.set_frame_rate(self.FRAME_RATE)
             elif file_extension not in SUPPORTED_FORMATS:
