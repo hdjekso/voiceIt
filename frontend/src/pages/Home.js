@@ -145,10 +145,8 @@ const Home = () => {
   };
 
   const handleTranscriptDelete = (deletedId, title) => {
-    console.log('Deleting transcript:', deletedId, title);
     setTranscripts(prevTranscripts => {
       const newTranscripts = prevTranscripts.filter(transcript => transcript._id !== deletedId);
-      console.log('Updated transcripts after deletion:', newTranscripts);
       return newTranscripts;
     });
     setSnackbar({
@@ -198,7 +196,7 @@ const Home = () => {
   };
 
   if (isLoading) {
-    console.log('Auth0 is loading...');
+    //console.log('Auth0 is loading...');
     return (
       <Box sx={{ 
         display: 'flex', 
@@ -212,7 +210,7 @@ const Home = () => {
   }
 
   if (!isAuthenticated) {
-    console.log('Not authenticated, redirecting...');
+    //console.log('Not authenticated, redirecting...');
     loginWithRedirect();
     return (
       <Box sx={{ 
