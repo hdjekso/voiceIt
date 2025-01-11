@@ -130,7 +130,7 @@ class ChunkedAudioProcessor:
 
     def summarize_text(self, transcript):
         # Break long transcripts into smaller chunks for summarization
-        max_chunk_length = 1000  # Maximum characters per chunk
+        max_chunk_length = 4000  # Maximum characters per chunk
         chunks = [transcript[i:i + max_chunk_length] 
                  for i in range(0, len(transcript), max_chunk_length)]
         
