@@ -74,11 +74,28 @@ class ChunkedAudioProcessor:
             print("All .wav files have been deleted.")
 
     def transcribe_audio_in_chunks(self, filename):
+        mp3_filename = None
         try:
             # Convert input file to standard format
             audio = AudioSegment.from_file(filename)
             audio = audio.set_channels(self.CHANNELS)
             audio = audio.set_frame_rate(self.FRAME_RATE)
+
+            SUPPORTED_FORMATS = {'mp3', 'wav', 'flac', 'aac', 'ogg'}
+            file_extension = filename.split('.')[-1].lower()
+            if file_extension == 'webm':
+                # Convert WebM to MP3
+                mp3_filename = filename.rsplit('.', 1)[0] + '.mp3'
+                ffmpeg.input(filename).output(mp3_filename, acodec='libmp3lame').run()
+                audio = AudioSegment.from_file(mp3_filename) # Load the MP3 file
+                audio = audio.set_channels(self.CHANNELS)
+                audio = audio.set_frame_rate(self.FRAME_RATE)
+            elif file_extension not in SUPPORTED_FORMATS:
+                print(json.dumps({
+                    "error": f"Unsupported file format: {file_extension}",
+                    "supported_formats": list(SUPPORTED_FORMATS)
+                }), file=sys.stderr) 
+                return
 
             # Process audio in chunks
             length_ms = len(audio)
