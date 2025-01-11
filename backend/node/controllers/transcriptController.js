@@ -181,13 +181,15 @@ const uploadAudioFile = (req, res) => {
             chunkStr = chunkStr.slice(0, periodIndex + 1) + '\n\n' + chunk.slice(periodIndex + 2);
           }
           chunkStr = chunkStr.slice(0, -1); //remove last char of chunk (whitespace)   */   
+          let summaryGenerated = false
           if (chunkStr.includes("too busy")) {
             res.write(JSON.stringift({ type: 'error', data: 'too busy'}) + '\n')
           }
-          if (chunkStr.startsWith('SUMMARY:')) {
+          if (chunkStr.startsWith('SUMMARY:') || summaryGenerated) {
             console.log("summary detected")
+            summaryGenerated = true
             // Capture the summary
-            summary = chunkStr.replace('SUMMARY:', '').trim();
+            summary += chunkStr.replace('SUMMARY:', '').trim();
           } else if (chunkStr.trim() === "transcription complete") { //append '.' to transcript
             transcriptionData += '.';
             res.write(JSON.stringify({ type: 'transcript', data: '.' }) + '\n');
