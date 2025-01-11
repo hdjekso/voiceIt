@@ -22,7 +22,7 @@ const AudioRecorder = ({onStopRecord}) => {
   const chunksRef = useRef([]);
   const navigate = useNavigate();
   const [title, setTitle] = useState('Untitled Transcript');
-  const MAX_RECORDING_TIME = 40 * 60 * 1000; // 40 minutes in milliseconds
+  const MAX_RECORDING_TIME = 30 * 60 * 1000; // 30 minutes in milliseconds
   const timeoutRef = useRef(null);
 
   useEffect(() => {
@@ -70,7 +70,7 @@ const AudioRecorder = ({onStopRecord}) => {
       timeoutRef.current = setTimeout(() => {
         //console.log("timed out, isRecordingRef:", isRecordingRef.current)
         stopRecording();
-        onStopRecord('Recording stopped automatically after 40 minutes.')
+        onStopRecord('Recording stopped automatically after 30 minutes.')
       }, MAX_RECORDING_TIME);
     } catch (err) {
       console.error('Error accessing microphone:', err);
