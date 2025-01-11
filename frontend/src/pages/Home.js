@@ -62,11 +62,6 @@ const Home = () => {
     if (savedName) {
       setUpdatedName(savedName);
     }
-    setSnackbar({
-      open: true,
-      message: `Transcript "${updatedName}" has been updated`,
-      severity: 'success'
-    });
   }, []);
 
   const theme = createTheme({
@@ -179,6 +174,11 @@ const Home = () => {
           : transcript
       )
     );
+    setSnackbar({
+      open: true,
+      message: `Transcript "${newTitle}" has been updated`,
+      severity: 'success'
+    });
   };
 
   const renderContent = () => {
