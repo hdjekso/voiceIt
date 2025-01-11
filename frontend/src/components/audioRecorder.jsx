@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Button,
@@ -14,13 +14,25 @@ import {
   TextFields
 } from '@mui/icons-material';
 
-const AudioRecorder = () => {
+const AudioRecorder = ({onStopRecord}) => {
   const [isRecording, setIsRecording] = useState(false);
+  const isRecordingRef = useRef(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const navigate = useNavigate();
   const [title, setTitle] = useState('Untitled Transcript');
+  const MAX_RECORDING_TIME = 40 * 60 * 1000; // 40 minutes in milliseconds
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    // Cleanup timeout when the component unmounts or when recording stops
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleTranscribeNavigate = () => {
     if (!audioBlob) {
@@ -51,23 +63,41 @@ const AudioRecorder = () => {
       };
 
       mediaRecorderRef.current.start();
-      setIsRecording(true);
+      setIsRecording(true)
+      isRecordingRef.current = true;
+
+      // Set timeout to stop recording after 40 minutes
+      timeoutRef.current = setTimeout(() => {
+        //console.log("timed out, isRecordingRef:", isRecordingRef.current)
+        stopRecording();
+        onStopRecord('Recording stopped automatically after 40 minutes.')
+      }, MAX_RECORDING_TIME);
     } catch (err) {
       console.error('Error accessing microphone:', err);
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+    //console.log("stopRecording() called");
+    //console.log("mediaRecorderRef.current:", mediaRecorderRef.current);
+    //console.log("isRecording:", isRecording);
+    if (mediaRecorderRef.current && isRecordingRef.current) {
+      //console.log("stopping recording")
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      isRecordingRef.current = false
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     }
+    
   };
 
   const cancelRecording = () => {
     if (isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      isRecordingRef.current = false
     }
     setAudioBlob(null);
     chunksRef.current = [];

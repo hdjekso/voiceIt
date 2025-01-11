@@ -181,14 +181,31 @@ const Home = () => {
     });
   };
 
+  //audio file too large
+  const handleFileSizeError = (message) => {
+    setSnackbar({
+      open: true,
+      message: message,
+      severity: 'error'
+    });
+  };
+
+  const handleRecordingStopped = (message) => {
+    setSnackbar({
+      open: true,
+      message: message,
+      severity: 'warning'
+    });
+  };
+
   const renderContent = () => {
     if (activeTab === 'upload') {
       return (
-        <AudioUploader/>
+        <AudioUploader onError={handleFileSizeError}/>
       );
     } else if (activeTab === 'record') {
       return (
-        <AudioRecorder/>
+        <AudioRecorder onStopRecord={handleRecordingStopped}/>
       );
     }
   };

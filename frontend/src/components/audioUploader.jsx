@@ -6,15 +6,20 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import { useNavigate } from 'react-router-dom';
 import { TextFields } from '@mui/icons-material';
 
-const AudioUploader = () => {
+const AudioUploader = ({ onError }) => {
 
   const [audioFile, setAudioFile] = useState(null);
   const [title, setTitle] = useState('Untitled Transcript'); // New state for title
   //const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate(); 
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
+    if (file.size > MAX_FILE_SIZE) {
+      onError('File size exceeds the 20MB limit. Please try again with a smaller file.');
+      return;
+    }
     if (file && file.type.startsWith('audio/')) {
       setAudioFile(file);
     }
