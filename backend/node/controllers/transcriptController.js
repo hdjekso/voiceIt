@@ -180,7 +180,9 @@ const uploadAudioFile = (req, res) => {
             chunkStr = chunkStr.slice(0, periodIndex + 1) + '\n\n' + chunk.slice(periodIndex + 2);
           }
           chunkStr = chunkStr.slice(0, -1); //remove last char of chunk (whitespace)      
-
+          if (chunkStr.includes("too busy")) {
+            res.write(JSON.stringift({ type: 'error', data: 'too busy'}) + '\n')
+          }
           if (chunkStr.startsWith('SUMMARY:')) {
             console.log("summary detected")
             // Capture the summary
