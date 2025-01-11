@@ -219,15 +219,31 @@ const uploadAudioFile = (req, res) => {
             console.error('Failed to save transcript:', error.message);
           }
 
-          // Delete up the uploaded file
-          try {
-            if (fs.existsSync(audioFilePath)) {
-              fs.unlinkSync(audioFilePath); // Delete the uploaded file
-              console.log(`File ${audioFilePath} deleted successfully.`);
+          //delete all files in /uploads folder
+          // Define the folder path
+          const uploadsFolder = path.join(__dirname, '../uploads');
+
+          // Read all files in the folder
+          fs.readdir(uploadsFolder, (err, files) => {
+            if (err) {
+              console.error(`Error reading the directory: ${err.message}`);
+              return;
             }
-          } catch (err) {
-            console.error(`Failed to delete file ${audioFilePath}:`, err);
-          }
+
+            // Loop through each file and delete it
+            files.forEach((file) => {
+              const filePath = path.join(uploadsFolder, file);
+              fs.unlink(filePath, (err) => {
+                if (err) {
+                  console.error(`Error deleting file ${file}: ${err.message}`);
+                } else {
+                  console.log(`Deleted: ${file}`);
+                }
+              });
+            });
+
+            console.log('All files in the uploads folder have been deleted.');
+          });
         });
       })
       .catch((error) => {

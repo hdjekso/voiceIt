@@ -53,9 +53,25 @@ class ChunkedAudioProcessor:
                 return result["text"].strip()
             return ""
             
-        finally:
-            if os.path.exists(temp_chunk_path):
-                os.remove(temp_chunk_path)
+        finally: #delete all audio files
+            '''if os.path.exists(temp_chunk_path):
+                os.remove(temp_chunk_path)'''
+            # Get the current directory
+            current_directory = os.getcwd()
+
+            # Loop through all files in the directory
+            for file_name in os.listdir(current_directory):
+                # Check if the file has a .wav extension
+                if file_name.endswith('.wav'):
+                    file_path = os.path.join(current_directory, file_name)
+                    try:
+                        # Delete the file
+                        os.remove(file_path)
+                        print(f"Deleted: {file_name}")
+                    except Exception as e:
+                        print(f"Error deleting {file_name}: {e}")
+
+            print("All .wav files have been deleted.")
 
     def transcribe_audio_in_chunks(self, filename):
         try:
