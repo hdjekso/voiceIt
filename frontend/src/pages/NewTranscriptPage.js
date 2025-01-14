@@ -99,16 +99,64 @@ const NewTranscript = () => {
               } else if (parsed.type === 'summary') {
                 // Update summary separately
                 setSummary(parsed.data);
-              } else if (parsed.type === 'error') { //models too busy
+              } else if (parsed.type === 'error') {
+                // Handle different error types
+                let message = '';
+                let severity = 'error';
+                let shouldNavigate = false;
+      
+                switch (parsed.code) {
+                  case 'TIMEOUT':
+                    //message = 'The transcription took too long. Please try again with a shorter audio file.';
+                    message = 'The transcription service is currently busy. Please try again in a few minutes.';
+                    severity = 'error';
+                    shouldNavigate = true;
+                    break;
+                  case 'BUSY':
+                    message = 'The transcription service is currently busy. Please try again in a few minutes.';
+                    severity = 'warning';
+                    shouldNavigate = true;
+                    break;
+                  case 'CONNECTION_ERROR':
+                    message = 'Lost connection to the transcription service. Please check your internet and try again.';
+                    severity = 'error';
+                    shouldNavigate = true;
+                    break;
+                  case 'TRANSCRIPTION_ERROR':
+                    message = 'There was an error transcribing your audio. Please try again.';
+                    severity = 'error';
+                    shouldNavigate = true;
+                    break;
+                  case 'SERVER_ERROR':
+                    message = 'An internal server error occurred. Please try again later.';
+                    severity = 'error';
+                    shouldNavigate = true;
+                    break;
+                  default:
+                    // For backwards compatibility with the old error format
+                    if (parsed.data.includes('too busy')) {
+                      message = 'Models are busy, please try again later.';
+                      severity = 'warning';
+                      shouldNavigate = true;
+                    } else {
+                      message = parsed.data || 'An unknown error occurred.';
+                      severity = 'error';
+                      shouldNavigate = true;
+                    }
+                }
+      
                 setSnackbar({
                   open: true,
-                  message: 'Models are busy, please try again later.',
-                  severity: 'warning'
+                  message,
+                  severity
                 });
-                // Wait for 3 seconds before navigating
-                setTimeout(() => {
-                  navigate('/dashboard');
-                }, 3000);
+      
+                if (shouldNavigate) {
+                  // Wait for 3 seconds before navigating
+                  setTimeout(() => {
+                    navigate('/dashboard');
+                  }, 3000);
+                }
               }
             } catch (err) {
               console.warn('Failed to parse chunk:', err.message);
