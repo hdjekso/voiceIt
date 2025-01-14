@@ -45,7 +45,7 @@ class ChunkedAudioProcessor:
         
         with open(temp_chunk_path, "rb") as f:
             data = f.read()
-        response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data)
+        response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data, timeout=30)
         result = response.json()
         
         if isinstance(result, dict) and "text" in result:
@@ -81,6 +81,7 @@ class ChunkedAudioProcessor:
             full_transcript = []
             
             for i in range(0, length_ms, CHUNK_SIZE):
+                print(f"transcribing chunk {i}", file=sys.stderr)
                 chunk = audio[i:min(i + CHUNK_SIZE, length_ms)]
                 
                 # Process chunk and get transcription
@@ -89,6 +90,7 @@ class ChunkedAudioProcessor:
                     full_transcript.append(chunk_transcript)
                     # Yield intermediate results
                     yield f"{chunk_transcript}\n"
+                    print(f"chunk {i} transcription complete", file=sys.stderr)
                 
                 # Free up memory
                 del chunk
@@ -185,6 +187,11 @@ def process_audio():
                 "traceback": traceback.format_exc()
             }
             yield json.dumps(error_msg)
+        
+            try:
+                os.remove(audio_file_path)
+            except Exception as e:
+                print(f"Cleanup error: {e}", file=sys.stderr)
 
     return Response(generate(), content_type='text/plain;charset=utf-8', status=200)
 

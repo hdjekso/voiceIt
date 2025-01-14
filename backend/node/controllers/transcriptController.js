@@ -131,7 +131,6 @@ const updateTranscript = async (req, res) => {
 
 }
 
-//new version with separated summary
 const uploadAudioFile = (req, res) => {
   try {
     if (!req.file) {
@@ -148,7 +147,6 @@ const uploadAudioFile = (req, res) => {
     const form = new FormData();
     form.append('audio_file', fs.createReadStream(audioFilePath));
 
-
     console.log("starting transcription...")
     //call flask api, process audio
     axios.post(`${process.env.FLASK_URL}/process`, form, {
@@ -156,55 +154,69 @@ const uploadAudioFile = (req, res) => {
         ...form.getHeaders(),
       },
       responseType: 'stream',
+      timeout: 300000, // 5 minute timeout for the entire request
     })
       .then(response => {
         let transcriptionData = '';
         let summary = '';
-        let isFirstChunk = true;  // Track whether it's the first chunk
+        let summaryGenerated = false;
 
         response.data.on('data', (chunk) => {
-          //let chunkStr = chunk.toString().replace(/\n/g, ' ');  // Clean up the chunk data
-          let chunkStr = chunk.toString()
+          let chunkStr = chunk.toString();
           console.log('Received chunk:', chunkStr);
           
-          // Add a space before the chunk unless it's the first one OR summary
-          /*if (!isFirstChunk && !chunkStr.startsWith('SUMMARY:')) {
-            chunkStr = ' ' + chunkStr;
-          } else {
-            isFirstChunk = false;  // After the first chunk, set the flag to false
-          }
-
-          // Add a newline after the last period in the chunk
-          const periodIndex = chunkStr.lastIndexOf('.');
-          if (periodIndex !== -1) {
-            // Remove the space after the last period (if it exists)
-            chunkStr = chunkStr.slice(0, periodIndex + 1) + '\n\n' + chunk.slice(periodIndex + 2);
-          }
-          chunkStr = chunkStr.slice(0, -1); //remove last char of chunk (whitespace)   */   
-          let summaryGenerated = false
-          if (chunkStr.includes("too busy")) {
-            res.write(JSON.stringift({ type: 'error', data: 'too busy'}) + '\n')
-          }
-          if (chunkStr.startsWith('SUMMARY:') || summaryGenerated) {
-            console.log("summary detected")
-            summaryGenerated = true
-            // Capture the summary
-            summary += chunkStr.replace('SUMMARY:', '').trim();
-          } else if (chunkStr.trim() === "transcription complete") { //append '.' to transcript
-            transcriptionData += '.';
-            res.write(JSON.stringify({ type: 'transcript', data: '.' }) + '\n');
-          } else { 
-            // Stream transcript chunks
-            transcriptionData += chunkStr + '\n';
-            res.write(JSON.stringify({ type: 'transcript', data: chunkStr + '\n' }) + '\n');
+          try {
+            // Try to parse the chunk as JSON to check for errors
+            const jsonChunk = JSON.parse(chunkStr);
+            if (jsonChunk.error) {
+              // Enhanced error type checking
+              if (jsonChunk.error.includes('timed out') || 
+                  jsonChunk.error.includes('timeout') ||
+                  jsonChunk.error.includes('TimeoutError')) {
+                res.write(JSON.stringify({ 
+                  type: 'error', 
+                  code: 'TIMEOUT',
+                  data: 'The transcription service timed out. Please try again with a shorter audio file or try later.'
+                }) + '\n');
+              } else if (jsonChunk.error.includes('too busy')) {
+                res.write(JSON.stringify({ 
+                  type: 'error', 
+                  code: 'BUSY',
+                  data: 'The service is currently too busy. Please try again in a few minutes.'
+                }) + '\n');
+              } else {
+                res.write(JSON.stringify({ 
+                  type: 'error', 
+                  code: 'TRANSCRIPTION_ERROR',
+                  data: 'An error occurred during transcription: ' + jsonChunk.error
+                }) + '\n');
+              }
+              // Clean up and end the response
+              cleanupUploads();
+              res.end();
+              return;
+            }
+          } catch (e) {
+            // Not JSON, process as normal chunk
+            if (chunkStr.startsWith('SUMMARY:') || summaryGenerated) {
+              console.log("summary detected");
+              summaryGenerated = true;
+              summary += chunkStr.replace('SUMMARY:', '').trim();
+            } else if (chunkStr.trim() === "transcription complete") {
+              transcriptionData += '.';
+              res.write(JSON.stringify({ type: 'transcript', data: '.' }) + '\n');
+            } else {
+              transcriptionData += chunkStr + '\n';
+              res.write(JSON.stringify({ type: 'transcript', data: chunkStr + '\n' }) + '\n');
+            }
           }
         });
     
         response.data.on('end', () => {
           console.log('Python process closed');
-          //transcriptionData += '.';
-          //res.write(JSON.stringify({ type: 'transcript', data: '.' }) + '\n');
-          res.write(JSON.stringify({ type: 'summary', data: summary }) + '\n');
+          if (summary) {
+            res.write(JSON.stringify({ type: 'summary', data: summary }) + '\n');
+          }
           res.end();
     
           try {
@@ -221,41 +233,62 @@ const uploadAudioFile = (req, res) => {
             console.error('Failed to save transcript:', error.message);
           }
 
-          //delete all files in /uploads folder
-          // Define the folder path
-          const uploadsFolder = path.join(__dirname, '../uploads');
-
-          // Read all files in the folder
-          fs.readdir(uploadsFolder, (err, files) => {
-            if (err) {
-              console.error(`Error reading the directory: ${err.message}`);
-              return;
-            }
-
-            // Loop through each file and delete it
-            files.forEach((file) => {
-              const filePath = path.join(uploadsFolder, file);
-              fs.unlink(filePath, (err) => {
-                if (err) {
-                  console.error(`Error deleting file ${file}: ${err.message}`);
-                } else {
-                  console.log(`Deleted: ${file}`);
-                }
-              });
-            });
-
-            console.log('All files in the uploads folder have been deleted.');
-          });
+          cleanupUploads();
         });
       })
       .catch((error) => {
         console.error('Error during API call:', error);
-        res.status(500).json({ error: 'Error processing audio' });
+        // Enhanced axios error handling
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          res.write(JSON.stringify({ 
+            type: 'error',
+            code: 'TIMEOUT',
+            data: 'The connection to the transcription service timed out. Please try again.'
+          }) + '\n');
+        } else {
+          res.write(JSON.stringify({ 
+            type: 'error',
+            code: 'CONNECTION_ERROR',
+            data: 'Error connecting to the transcription service. Please try again.'
+          }) + '\n');
+        }
+        cleanupUploads();
+        res.end();
       });
   } catch (error) {
     console.error('Error in uploadAudioFile:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.write(JSON.stringify({ 
+      type: 'error',
+      code: 'SERVER_ERROR',
+      data: 'Internal server error occurred. Please try again.'
+    }) + '\n');
+    cleanupUploads();
+    res.end();
   }
+};
+
+// Helper function to clean up uploads folder
+const cleanupUploads = () => {
+  const uploadsFolder = path.join(__dirname, '../uploads');
+  fs.readdir(uploadsFolder, (err, files) => {
+    if (err) {
+      console.error(`Error reading the directory: ${err.message}`);
+      return;
+    }
+
+    files.forEach((file) => {
+      const filePath = path.join(uploadsFolder, file);
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(`Error deleting file ${file}: ${err.message}`);
+        } else {
+          console.log(`Deleted: ${file}`);
+        }
+      });
+    });
+
+    console.log('All files in the uploads folder have been deleted.');
+  });
 };
 
 module.exports = {
