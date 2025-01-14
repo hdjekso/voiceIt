@@ -53,8 +53,9 @@ class ChunkedAudioProcessor:
                 response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data, timeout=30)
                 if response.status_code == 200:
                     result = response.json()
+                    transcript_chunk = result["text"].strip()
                     if isinstance(result, dict) and "text" in result:
-                        return result["text"].strip()
+                        return transcript_chunk
                 else:
                     print(f"API returned status {response.status_code}. Retrying...", file=sys.stderr)
             except requests.exceptions.RequestException as e:
@@ -66,7 +67,7 @@ class ChunkedAudioProcessor:
             "code": "TIMEOUT",
             "data": f"The transcription service timed out or encountered an error: {str(e)}"
         }
-        yield json.dumps(error_msg) + '\n'
+        return json.dumps(error_msg) + '\n'
         raise Exception("Max retries reached for chunk transcription")
         '''response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data)
         result = response.json()
@@ -110,7 +111,11 @@ class ChunkedAudioProcessor:
                 # Process chunk and get transcription
                 chunk_transcript = self.process_audio_chunk(chunk)
                 if chunk_transcript:
-                    full_transcript.append(chunk_transcript)
+                    print(f"Type of chunk_transcript: {type(chunk_transcript)}")  # Debugging
+                    if isinstance(chunk_transcript, str):
+                        full_transcript.append(chunk_transcript)
+                    else:
+                        print(f"Unexpected type: {type(chunk_transcript)}", file=sys.stderr)
                     # Yield intermediate results
                     yield f"{chunk_transcript}\n"
                     print(f"chunk {i} transcription complete", file=sys.stderr)
