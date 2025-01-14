@@ -60,8 +60,14 @@ class ChunkedAudioProcessor:
             except requests.exceptions.RequestException as e:
                 print(f"Request failed: {e}. Retrying...", file=sys.stderr)
             time.sleep(backoff_factor ** attempt)
+        
+        error_msg = {
+            "type": "error",
+            "code": "TIMEOUT",
+            "data": f"The transcription service timed out or encountered an error: {str(e)}"
+        }
+        yield json.dumps(error_msg) + '\n'
         raise Exception("Max retries reached for chunk transcription")
-
         '''response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data)
         result = response.json()
         
