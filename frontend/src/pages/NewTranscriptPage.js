@@ -108,7 +108,7 @@ const NewTranscript = () => {
                 switch (parsed.code) {
                   case 'TIMEOUT':
                     //message = 'The transcription took too long. Please try again with a shorter audio file.';
-                    message = 'The transcription service is currently busy. Please try again in a few minutes.';
+                    message = 'The transcription service timed out. Please try again in a few minutes.';
                     severity = 'error';
                     shouldNavigate = true;
                     break;
