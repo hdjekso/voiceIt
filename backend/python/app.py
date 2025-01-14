@@ -25,7 +25,7 @@ NODE_URL = os.getenv('NODE_URL')
 LOCALHOST_URL = os.getenv('LOCALHOST_URL')
 CORS(app, resources={r"/*": {"origins": [NODE_URL, LOCALHOST_URL]}})
 
-CHUNK_SIZE = 60 * 1 * 1000  # 1.5 min in milliseconds
+CHUNK_SIZE = 45 * 1 * 1000  # 1 min in milliseconds
 MAX_WORKERS = 3  # Limit concurrent processing
 
 class ChunkedAudioProcessor:
@@ -36,6 +36,8 @@ class ChunkedAudioProcessor:
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
         
     def process_audio_chunk(self, chunk):
+        retries=3
+        backoff_factor=2
         """Process a single audio chunk."""
         temp_chunk_path = f"temp_chunk_{time.time()}.wav"
         chunk.export(temp_chunk_path, format="wav")
@@ -45,12 +47,27 @@ class ChunkedAudioProcessor:
         
         with open(temp_chunk_path, "rb") as f:
             data = f.read()
-        response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data, timeout=45)
+        
+        for attempt in range(retries):
+            try:
+                response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data, timeout=30)
+                if response.status_code == 200:
+                    result = response.json()
+                    if isinstance(result, dict) and "text" in result:
+                        return result["text"].strip()
+                else:
+                    print(f"API returned status {response.status_code}. Retrying...", file=sys.stderr)
+            except requests.exceptions.RequestException as e:
+                print(f"Request failed: {e}. Retrying...", file=sys.stderr)
+            time.sleep(backoff_factor ** attempt)
+        raise Exception("Max retries reached for chunk transcription")
+
+        '''response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data)
         result = response.json()
         
         if isinstance(result, dict) and "text" in result:
             return result["text"].strip()
-        return ""
+        return ""'''
 
     def transcribe_audio_in_chunks(self, filename):
         wav_filename = None
