@@ -45,7 +45,7 @@ class ChunkedAudioProcessor:
         
         with open(temp_chunk_path, "rb") as f:
             data = f.read()
-        response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data, timeout=30)
+        response = requests.post(TRANSCRIPTION_API_URL, headers=headers, data=data, timeout=45)
         result = response.json()
         
         if isinstance(result, dict) and "text" in result:
