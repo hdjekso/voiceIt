@@ -169,6 +169,7 @@ const uploadAudioFile = (req, res) => {
             // Try to parse the chunk as JSON to check for errors
             const jsonChunk = JSON.parse(chunkStr);
             if (jsonChunk.error) {
+              console.log(jsonChunk)
               // Enhanced error type checking
               if (jsonChunk.error.includes('timed out') || 
                   jsonChunk.error.includes('timeout') ||
@@ -198,6 +199,15 @@ const uploadAudioFile = (req, res) => {
             }
           } catch (e) {
             // Not JSON, process as normal chunk
+            //add extra error checking in case it's not recognized as an error
+            if (chunkStr.includes('timed out') || 
+              chunkStr.includes('timeout') ||
+              chunkStr.includes('TimeoutError')) {
+            res.write(JSON.stringify({ 
+              type: 'error', 
+              code: 'TIMEOUT',
+              data: 'The transcription service timed out. Please try again with a shorter audio file or try later.'
+            }) + '\n');
             if (chunkStr.startsWith('SUMMARY:') || summaryGenerated) {
               console.log("summary detected");
               summaryGenerated = true;
