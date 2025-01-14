@@ -111,7 +111,7 @@ class ChunkedAudioProcessor:
                 # Process chunk and get transcription
                 chunk_transcript = self.process_audio_chunk(chunk)
                 if chunk_transcript:
-                    print(f"Type of chunk_transcript: {type(chunk_transcript)}")  # Debugging
+                    #print(f"Type of chunk_transcript: {type(chunk_transcript)}")  # Debugging
                     if isinstance(chunk_transcript, str):
                         full_transcript.append(chunk_transcript)
                     else:
