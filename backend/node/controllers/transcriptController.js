@@ -207,8 +207,8 @@ const uploadAudioFile = (req, res) => {
               type: 'error', 
               code: 'TIMEOUT',
               data: 'The transcription service timed out. Please try again with a shorter audio file or try later.'
-            }) + '\n');
-            if (chunkStr.startsWith('SUMMARY:') || summaryGenerated) {
+            }) + '\n')
+            } else if (chunkStr.startsWith('SUMMARY:') || summaryGenerated) {
               console.log("summary detected");
               summaryGenerated = true;
               summary += chunkStr.replace('SUMMARY:', '').trim();
